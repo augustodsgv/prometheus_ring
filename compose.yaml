@@ -6,21 +6,23 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - prometheus-ring-api-network
+      - cloud-region-a
     ports:
       - "9988:9988"
     environment:
-    API_DOCKER_NETWORK:
+    - API_DOCKER_NETWORK=cloud-region-a
     - DOCKER_PROMETHEUS_IMAGE=prometheus-ring-node
     - API_ENDPOINT=prometheus-ring-api
     - API_PORT=9988
-    - NODE_CAPACITY=4
+    - NODE_CAPACITY=2
     - NODE_MIN_LOAD=1
-    - NODE_MAX_LOAD=3
-    - NODE_SCRAPE_INTERVAL=1m
-    - NODE_SD_REFRESH_INTERVAL=5m
+    - NODE_MAX_LOAD=2
+    - NODE_SCRAPE_INTERVAL=1s
+    - NODE_SD_REFRESH_INTERVAL=1s
     - LOG_LEVEL=WARNING
 
 networks:
-  prometheus-ring-api-network:
+  # prometheus-ring-api-network:
+  #   external: true
+  cloud-region-a:
     external: true

@@ -15,13 +15,13 @@ API_DOCKER_NETWORK = os.environ.get('API_DOCKER_NETWORK', "ring-api-network")
 DOCKER_PROMETHEUS_IMAGE = os.environ.get('DOCKER_PROMETHEUS_IMAGE', "prometheus-ring-node")
 
 API_ENDPOINT = os.environ.get('API_ENDPOINT', "prometheus-ring-api")
-API_PORT = os.environ.get('API_PORT', 9988)
-
-NODE_CAPACITY=os.environ.get('NODE_CAPACITY', '2')
-NODE_MIN_LOAD=os.environ.get('NODE_MIN_LOAD', '2')
-NODE_MAX_LOAD=os.environ.get('NODE_MAX_LOAD', '3')
+API_PORT = int(os.environ.get('API_PORT', 9988)
+)
+NODE_CAPACITY=int(os.environ.get('NODE_CAPACITY', '2'))
+NODE_MIN_LOAD=int(os.environ.get('NODE_MIN_LOAD', '2'))
+NODE_MAX_LOAD=int(os.environ.get('NODE_MAX_LOAD', '3'))
 NODE_SCRAPE_INTERVAL=os.environ.get('NODE_SCRAPE_INTERVAL', '1m')
-NODE_SD_REFRESH_INTERVAL=os.environ.get('API_PORT', '1m')
+NODE_SD_REFRESH_INTERVAL=os.environ.get('NODE_SD_REFRESH_INTERVAL', '1m')
 
 # SD_URL = os.environ.get('SD_URL', "prometheus-ring-api")
 # SD_PORT = os.environ.get('SD_PORT', "prometheus-ring-api")        # In our case, the api IS the service discovery
