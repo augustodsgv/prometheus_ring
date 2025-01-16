@@ -23,8 +23,8 @@ NODE_MAX_LOAD=os.environ.get('NODE_MAX_LOAD', '3')
 NODE_SCRAPE_INTERVAL=os.environ.get('NODE_SCRAPE_INTERVAL', '1m')
 NODE_SD_REFRESH_INTERVAL=os.environ.get('API_PORT', '1m')
 
-SD_URL = os.environ.get('SD_URL', "prometheus-ring-api")
-SD_PORT = os.environ.get('SD_PORT', "prometheus-ring-api")
+# SD_URL = os.environ.get('SD_URL', "prometheus-ring-api")
+# SD_PORT = os.environ.get('SD_PORT', "prometheus-ring-api")        # In our case, the api IS the service discovery
 
 LOG_LEVEL = os.environ.get('LOG_LEVEL', "INFO").upper()
 LOGGING_CONFIG = {

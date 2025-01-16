@@ -47,7 +47,8 @@ class PrometheusRing(Ring):
             replica_count=self.node_replica_count,
             refresh_interval=self.node_sd_refresh_interval,
             scrape_interval=self.node_scrape_interval,
-            port=9090       # Port of the first node
+            port=9090       # Port of the first node    
+            # TODO: Make an more versitile way to set the port
             )
         self.ring.insert(0, new_node)
 
