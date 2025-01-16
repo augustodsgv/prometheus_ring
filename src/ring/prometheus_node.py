@@ -16,6 +16,7 @@ class PrometheusNode(Node):
             sd_port: str | None = None,
             scrape_interval = '1m',
             refresh_interval = '1m',
+            port: int | None = None
         ) -> None:
 
         self.replica_count = replica_count
@@ -28,6 +29,7 @@ class PrometheusNode(Node):
         self.refresh_interval = refresh_interval
         self.sd_url = sd_url
         self.sd_port = sd_port
+        self.port = port
 
     def insert(self, key: str, value: Target) -> None:
         """
@@ -155,7 +157,7 @@ class PrometheusNode(Node):
                     'relabel_configs': [
                         {
                             'action': 'keep',
-                            'source_labels': ['__meta_http_sd_label_node_index'],
+                            'source_labels': ['node_index'],
                             'regex': str(self.index)
                         }
                     ]

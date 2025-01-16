@@ -46,7 +46,8 @@ class PrometheusRing(Ring):
             sd_port=self.sd_port,
             replica_count=self.node_replica_count,
             refresh_interval=self.node_sd_refresh_interval,
-            scrape_interval=self.node_scrape_interval
+            scrape_interval=self.node_scrape_interval,
+            port=9090       # Port of the first node
             )
         self.ring.insert(0, new_node)
 
@@ -64,7 +65,10 @@ class PrometheusRing(Ring):
         """
         if key is None:
             key = str(uuid.uuid4())
-        if self.ring.search() is not None:
+
+        # Checking for duplicated keys. Current implementations does not support it
+        node_to_search = self._find_node(hash(key))
+        if node_to_search.has_key(key):
             raise KeyAlreadyExistsError(f'Key {key} already exists')
         key_hash = hash(key)
         node_to_insert: PrometheusNode = self._find_node(key_hash)

@@ -13,6 +13,10 @@ import os
 
 LOG_LEVEL = os.environ.get('LOG_LEVEL', "INFO").upper()
 LOG_FILE_PATH = os.environ.get('LOG_FILE_PATH', "log.txt")
+DOCKER_NETWORK = os.environ.get('DOCKER_NETWORK', "ring-api-network")
+DOCKER_PROMETHEUS_IMAGE = os.environ.get('DOCKER_PROMETHEUS_IMAGE', "prometheus-ring-node")
+API_ENDPOINT = os.environ.get('API_ENDPOINT', "prometheus-ring-api")
+API_PORT = os.environ.get('API_PORT', 9988)
 
 LOGGING_CONFIG = {
     "version": 1,
@@ -59,13 +63,13 @@ ring = PrometheusRing(
     node_capacity=2,
     node_min_load=0,
     node_max_load=2,
-    sd_url='localhost',
-    sd_port=8500,
+    sd_url=API_ENDPOINT,
+    sd_port=API_PORT,
     node_scrape_interval='10s',
     node_sd_refresh_interval='10s',
     adt=bst
     )
-docker_orquestrator = DockerOrquestrator('prometheus_ring')
+docker_orquestrator = DockerOrquestrator(DOCKER_PROMETHEUS_IMAGE)
 api = API(ring, docker_orquestrator)
 # The first node has to be created manually
 first_node = ring.get_initial_node()

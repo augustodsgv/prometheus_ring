@@ -5,7 +5,6 @@ if [ -z "$PROMETHEUS_YML" ]; then
     exit 1
 fi
 
-echo $PROMETHEUS_YML | base64 -d > prometheus.yml
-# /etc/prometheus/prometheus.yml
+echo $PROMETHEUS_YML | base64 -d > /etc/prometheus/prometheus.yml
 
-# exec /bin/prometheus "$@"
+exec /bin/prometheus "$@"

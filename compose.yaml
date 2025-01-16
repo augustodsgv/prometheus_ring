@@ -1,0 +1,15 @@
+services:
+  prometheus-ring-api:
+    build: .
+    # environment:
+    # -     
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - prometheus-ring-api-network
+    ports:
+      - "9988:9988"
+
+networks:
+  prometheus-ring-api-network:
+    external: true
