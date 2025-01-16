@@ -1,0 +1,9 @@
+class KeyNotFoundError(Exception):
+    ...
+
+class NodeIsFullError(Exception):
+    ...
+
+class KeyAlreadyExistsError(Exception):
+    ...
+
