@@ -8,4 +8,4 @@ scrape_configs:
   relabel_configs:
   - action: keep
     regex: '1'
-    source_labels: [__meta_http_sd_label_index]
+    source_labels: [node_index]

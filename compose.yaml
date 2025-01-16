@@ -9,6 +9,17 @@ services:
       - prometheus-ring-api-network
     ports:
       - "9988:9988"
+    environment:
+    API_DOCKER_NETWORK:
+    - DOCKER_PROMETHEUS_IMAGE=prometheus-ring-node
+    - API_ENDPOINT=prometheus-ring-api
+    - API_PORT=9988
+    - NODE_CAPACITY=4
+    - NODE_MIN_LOAD=1
+    - NODE_MAX_LOAD=3
+    - NODE_SCRAPE_INTERVAL=1m
+    - NODE_SD_REFRESH_INTERVAL=5m
+    - LOG_LEVEL=WARNING
 
 networks:
   prometheus-ring-api-network:
