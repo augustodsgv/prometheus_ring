@@ -7,8 +7,8 @@ class DockerOrquestrator(Orquestrator):
     def __init__(
             self,
             prometheus_docker_image: str = 'prom/prometheus',
-            docker_url: str = 'unix://var/run/docker.sock',
-            api_network: str = 'prometheus-ring-api-network'
+            api_network: str = 'prometheus-ring-api-network',
+            docker_url: str = 'unix://var/run/docker.sock'
         )->None:
         self.client = docker.DockerClient(base_url=docker_url)
         try:

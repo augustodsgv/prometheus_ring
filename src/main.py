@@ -11,13 +11,22 @@ from src.ring.errors.ring_errors import *
 from src.ring.errors.node_errors import *
 import os
 
-LOG_LEVEL = os.environ.get('LOG_LEVEL', "INFO").upper()
-LOG_FILE_PATH = os.environ.get('LOG_FILE_PATH', "log.txt")
-DOCKER_NETWORK = os.environ.get('DOCKER_NETWORK', "ring-api-network")
+API_DOCKER_NETWORK = os.environ.get('API_DOCKER_NETWORK', "ring-api-network")
 DOCKER_PROMETHEUS_IMAGE = os.environ.get('DOCKER_PROMETHEUS_IMAGE', "prometheus-ring-node")
+
 API_ENDPOINT = os.environ.get('API_ENDPOINT', "prometheus-ring-api")
 API_PORT = os.environ.get('API_PORT', 9988)
 
+NODE_CAPACITY=os.environ.get('NODE_CAPACITY', '2')
+NODE_MIN_LOAD=os.environ.get('NODE_MIN_LOAD', '2')
+NODE_MAX_LOAD=os.environ.get('NODE_MAX_LOAD', '3')
+NODE_SCRAPE_INTERVAL=os.environ.get('NODE_SCRAPE_INTERVAL', '1m')
+NODE_SD_REFRESH_INTERVAL=os.environ.get('API_PORT', '1m')
+
+SD_URL = os.environ.get('SD_URL', "prometheus-ring-api")
+SD_PORT = os.environ.get('SD_PORT', "prometheus-ring-api")
+
+LOG_LEVEL = os.environ.get('LOG_LEVEL', "INFO").upper()
 LOGGING_CONFIG = {
     "version": 1,
     "disable_existing_loggers": True,
@@ -30,15 +39,9 @@ LOGGING_CONFIG = {
             "formatter": "standard",
             "class": "logging.StreamHandler",
             "stream": "ext://sys.stdout",  # Default is stderr
-        },
-        "file": {
-            "level": "INFO",
-            "formatter": "standard",
-            "class": "logging.FileHandler",
-            "filename": LOG_FILE_PATH,
-        },
-        },
-        "loggers": {
+        }
+    },
+    "loggers": {
         "": {  # root logger
             "level": LOG_LEVEL,
             "handlers": ["default"],
@@ -56,20 +59,21 @@ LOGGING_CONFIG = {
 }
 
 logging.config.dictConfig(LOGGING_CONFIG)
-
 logger = logging.getLogger(__name__)
+
 bst = BinarySearchTree()
 ring = PrometheusRing(
-    node_capacity=2,
-    node_min_load=0,
-    node_max_load=2,
+    node_capacity=NODE_CAPACITY,
+    node_min_load=NODE_MIN_LOAD,
+    node_max_load=NODE_MAX_LOAD,
     sd_url=API_ENDPOINT,
     sd_port=API_PORT,
-    node_scrape_interval='10s',
-    node_sd_refresh_interval='10s',
+    node_scrape_interval=NODE_SCRAPE_INTERVAL,
+    node_sd_refresh_interval=NODE_SD_REFRESH_INTERVAL,
     adt=bst
     )
-docker_orquestrator = DockerOrquestrator(DOCKER_PROMETHEUS_IMAGE)
+
+docker_orquestrator = DockerOrquestrator(DOCKER_PROMETHEUS_IMAGE, API_DOCKER_NETWORK)
 api = API(ring, docker_orquestrator)
 # The first node has to be created manually
 first_node = ring.get_initial_node()
@@ -98,8 +102,3 @@ def get_targets():
     targets = api.build_targets_json()
     logger.debug(f'targets {targets}')
     return JSONResponse(content=targets)
-
-    # try:
-    # except Exception as e:
-    #     logger.error(f"Error fetching targets: {e}")
-    #     raise HTTPException(status_code=500, detail="Internal Server Error")
