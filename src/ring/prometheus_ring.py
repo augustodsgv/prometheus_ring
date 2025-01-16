@@ -1,10 +1,11 @@
-from .errors.node_errors import KeyNotFoundError, NodeIsFullError 
+from .errors.node_errors import KeyNotFoundError, KeyAlreadyExistsError
 from .errors.ring_errors import NodeNotFoundError
 from .prometheus_node import PrometheusNode
 from .ring import Ring
 from .prometheus_node import Node
 from ..adt.abstract_data_type import AbstractDataType
 from ..hash import hash
+from src.ring.target import Target
 
 from typing import Any
 import uuid
@@ -53,9 +54,9 @@ class PrometheusRing(Ring):
         """
         This node is only safe if ran after the inition
         """
-        return self.get_nodes()[0].value
+        return self.get_nodes()[0]
 
-    def insert(self, value: PrometheusNode, key: str | None = None)->None | PrometheusNode:
+    def insert(self, value: Target, key: str | None = None)->None | PrometheusNode:
         """
         Insert an target in the ring. If Ring scaled up, returns the node
         If a node reaches it's maximum load, a new node will be instanciated
@@ -63,10 +64,12 @@ class PrometheusRing(Ring):
         """
         if key is None:
             key = str(uuid.uuid4())
+        if self.ring.search() is not None:
+            raise KeyAlreadyExistsError(f'Key {key} already exists')
         key_hash = hash(key)
         node_to_insert: PrometheusNode = self._find_node(key_hash)
         logger.debug(f'Inserting {value} into node {node_to_insert}')
-
+        new_node = None
         if node_to_insert.load >= self.node_max_load:
             logger.info(f'Node {node_to_insert.index} is full: scaling up the ring')
             new_node = self._split_node(node_to_insert)
@@ -75,7 +78,7 @@ class PrometheusRing(Ring):
 
         node_to_insert.insert(key, value)
         logger.debug(f'Ring nodes after insertions: {self.get_nodes()}')  
-        return key    
+        return new_node    
 
     def get(self, key: str)->Any:
         """
@@ -87,7 +90,7 @@ class PrometheusRing(Ring):
             raise KeyNotFoundError(f'Key {key} not found')
         return node_set_to_search.get(key)
 
-    def update(self, key: str, new_value: Any)->None:
+    def update(self, key: str, new_value: Target)->None:
         """
         Updates the Target of a key. Returns old object if update or None if didn't find
         Probly not useful in this implementation
@@ -134,7 +137,15 @@ class PrometheusRing(Ring):
         Returns the new node
         """
         node_mid_hash = node.calc_mid_hash()        # The new node will get half of the keys of the old node.
-        new_node = PrometheusNode(node_mid_hash, self.node_capacity)
+        new_node = PrometheusNode(
+            node_index=node_mid_hash,
+            capacity=self.node_capacity,
+            replica_count=self.node_replica_count,
+            sd_url=self.sd_url,
+            sd_port=self.sd_port,
+            scrape_interval=self.node_scrape_interval,
+            refresh_interval=self.node_sd_refresh_interval
+            )
         self.ring.insert(node_mid_hash, new_node)
         node.export_keys(new_node, node_mid_hash)
         self.node_count += 1

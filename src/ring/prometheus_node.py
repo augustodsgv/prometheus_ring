@@ -60,7 +60,7 @@ class PrometheusNode(Node):
         """
         Lists all targets from this node
         """
-        return list(self.targets.items())
+        return list(self.targets.values())
 
     def delete(self, key: str) -> Target:
         """

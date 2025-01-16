@@ -58,7 +58,7 @@ class BinarySearchTree(AbstractDataType):
         return self._inorder(self.root)
     
     def list(self)->list[Any]:
-        return self.inorder()
+        return [node for key, node in self.inorder()]
 
 
     def _inorder(self, root):
