@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 1m
+scrape_configs:
+- http_sd_configs:
+  - refresh_interval: 1m
+    url: http://localhost:8500/targets
+  job_name: prometheus_ring_sd
+  relabel_configs:
+  - action: keep
+    regex: '1'
+    source_labels: [__meta_http_sd_label_index]
