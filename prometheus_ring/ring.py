@@ -1,7 +1,7 @@
-from adt.abstract_data_type import AbstractDataType
-from node import Node
-from hash import hash
-from target import Target
+from .adt.abstract_data_type import AbstractDataType
+from .node import Node
+from .hash import hash
+from .target import Target
 
 import uuid
 import logging
@@ -20,8 +20,8 @@ class Ring:
     def __init__(
             self,
             node_capacity: int,
-            node_min_load: float,
-            node_max_load: float,
+            node_min_load: int,         # Using integer for simplicity. Varies from 0 to 100 (%)
+            node_max_load: int,
             sd_url: str,
             sd_port: str,
             adt: AbstractDataType,
@@ -44,7 +44,7 @@ class Ring:
         Creating node zero. It can not be deleted.
         """
         self.node_zero = Node(
-            node_index=0,
+            index=0,
             capacity=node_capacity,
             sd_url=self.sd_url,
             sd_port=self.sd_port,
@@ -73,15 +73,13 @@ class Ring:
         key_hash = hash(key)
         node_to_insert: Node = self._find_node(key_hash)
         logger.debug(f'Inserting {target} into node {node_to_insert}')
-        new_node = None
-        if node_to_insert.load >= self.node_max_load:
+        node_to_insert.insert(key, target)
+
+        if node_to_insert.load >= self.node_max_load:                           # Detection if made after deletion to ensure it scales up at the right time
             logger.info(f'Node {node_to_insert.index} is full: scaling up the ring')
             new_node = self._split_node(node_to_insert)
-            node_to_insert = self._find_node(key_hash)          # Recalculates the node. The old is not exacly the appropriated one
-
-        node_to_insert.insert(key, target)
-        logger.debug(f'Ring nodes after insertions: {self.get_nodes()}')  
-        return new_node    
+            return new_node
+        return None
 
     def get(self, key: str)->Node:
         """
@@ -114,13 +112,22 @@ class Ring:
         if not node_to_search.has_key(key):
             raise KeyNotFoundError(f'Key {key} not found')
         # TODO: If the previous node is full, it will be overloaded. Should implement something to treat this
-
-        removed_key = node_to_search.delete(key)
-        if node_to_search.load < self.node_min_load and self.node_count > 1:        # Should not delete the initial node
+        print(f'node load before deletion {node_to_search.load}')
+        node_to_search.delete(key)
+        print(f'node load after deletion {node_to_search.load}')
+        if node_to_search.load <= self.node_min_load:            # Scaling down the cluster
+            if node_to_search == self.node_zero:
+                """
+                We can't delete node zero.
+                In current implementation, the node zero can be underloaded to make it simples
+                """
+                print('node zero: not deleting')
+                return None
+            print('deleting node')
             logger.info(f'Node {node_to_search.index} is underloaded: scaling down the ring')
             self._delete_node(node_to_search.index)
-            
-        return node_to_search
+            return node_to_search
+        return None
 
     def get_nodes(self)->list[Node]:
         """
@@ -141,7 +148,7 @@ class Ring:
         """
         node_mid_hash = node.calc_mid_hash()        # The new node will get half of the keys of the old node.
         new_node = Node(
-            node_index=node_mid_hash,
+            index=node_mid_hash,
             capacity=self.node_capacity,
             replica_count=self.node_replica_count,
             sd_url=self.sd_url,
@@ -166,7 +173,8 @@ class Ring:
         if node_to_delete is None:
             logger.info(f'Node with index {index} not found to delete')
             raise NodeNotFoundError(f'Node with index {index} not found')
-        prior_node: Node = self.ring.find_max_smaller_than(index)
+        prior_node: Node = self.ring.find_max_smaller_than(index - 1)       # Ensures
+        print(f'prior node: {prior_node}')
         logger.info(f'Exporting Keys of node {index} to the node {prior_node.index}')
         node_to_delete.export_keys(prior_node, 0)           # Uses 0 to ensure that all of if keys are exported
         self.ring.remove(index)

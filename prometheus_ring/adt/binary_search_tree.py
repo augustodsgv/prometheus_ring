@@ -1,5 +1,5 @@
 from typing import Any
-from src.adt.abstract_data_type import AbstractDataType
+from .abstract_data_type import AbstractDataType
 
 class BSTNode:
     def __init__(self, key: int, value: Any):
@@ -167,11 +167,8 @@ class BinarySearchTree(AbstractDataType):
 
     def _find_max_smaller_than(self, root, key: int, max_node)->BSTNode:
         if root is None:
-            return max_node
-        
-        if root.key == key:         # If root is equal, there can't be any smaller node for key
-            return root
-        
+            return None
+
         if root.key < key:          # If root is less than key: int, we can try to go right and increase our node keyue
             max_node = root
             return self._find_max_smaller_than(root.right, key, max_node)
@@ -188,9 +185,6 @@ class BinarySearchTree(AbstractDataType):
     def _find_min_greater_than(self, root, key: int, max_node)->BSTNode:
         if root is None:
             return max_node
-        
-        if root.key == key:         # If root is equal, there can't be any smaller node for key
-            return root
         
         if root.key > key:          # If root is greater than key: int, we can try to go left and decreate our node key
             max_node = root
