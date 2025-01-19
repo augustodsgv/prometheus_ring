@@ -1,14 +1,12 @@
-from src.ring.prometheus_node import PrometheusNode
-from src.orquestrator.docker_orquestrator import DockerOrquestrator
-from src.ring.prometheus_ring import PrometheusRing
-from src.adt.binary_search_tree import BinarySearchTree
-from src.ring.target import Target
-from src.api import API
+from adt.binary_search_tree import BinarySearchTree
+from target import Target
+from node import Node
+from ring import Ring, KeyNotFoundError, KeyAlreadyExistsError
+from orquestrator import Orquestrator
+from api import API
 import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
-from src.ring.errors.ring_errors import *
-from src.ring.errors.node_errors import *
 import os
 
 API_DOCKER_NETWORK = os.environ.get('API_DOCKER_NETWORK', "ring-api-network")
@@ -22,9 +20,6 @@ NODE_MIN_LOAD=int(os.environ.get('NODE_MIN_LOAD', '2'))
 NODE_MAX_LOAD=int(os.environ.get('NODE_MAX_LOAD', '3'))
 NODE_SCRAPE_INTERVAL=os.environ.get('NODE_SCRAPE_INTERVAL', '1m')
 NODE_SD_REFRESH_INTERVAL=os.environ.get('NODE_SD_REFRESH_INTERVAL', '1m')
-
-# SD_URL = os.environ.get('SD_URL', "prometheus-ring-api")
-# SD_PORT = os.environ.get('SD_PORT', "prometheus-ring-api")        # In our case, the api IS the service discovery
 
 LOG_LEVEL = os.environ.get('LOG_LEVEL', "INFO").upper()
 LOGGING_CONFIG = {
@@ -62,7 +57,7 @@ logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger(__name__)
 
 bst = BinarySearchTree()
-ring = PrometheusRing(
+ring = Ring(
     node_capacity=NODE_CAPACITY,
     node_min_load=NODE_MIN_LOAD,
     node_max_load=NODE_MAX_LOAD,
@@ -73,7 +68,7 @@ ring = PrometheusRing(
     adt=bst
     )
 
-docker_orquestrator = DockerOrquestrator(DOCKER_PROMETHEUS_IMAGE, API_DOCKER_NETWORK)
+docker_orquestrator = Orquestrator(DOCKER_PROMETHEUS_IMAGE, API_DOCKER_NETWORK)
 api = API(ring, docker_orquestrator)
 # The first node has to be created manually
 first_node = ring.get_initial_node()

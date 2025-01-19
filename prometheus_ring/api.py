@@ -1,7 +1,6 @@
-from src.orquestrator.docker_orquestrator import DockerOrquestrator
-from src.ring.prometheus_ring import PrometheusRing
-from src.service_discovery.prometheus_ring_sd import PrometheusRingSD
-from src.ring.target import Target
+from .orquestrator import Orquestrator
+from .ring import Ring
+from .target import Target
 import logging
 
 logger = logging.getLogger(__name__)
@@ -9,8 +8,8 @@ logger = logging.getLogger(__name__)
 class API:
     def __init__(
             self,
-            ring: PrometheusRing,
-            orquestrator: DockerOrquestrator,
+            ring: Ring,
+            orquestrator: Orquestrator,
         )->None:
 
         self.ring = ring

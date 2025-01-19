@@ -1,3 +1,0 @@
-class NodeNotFoundError(Exception):
-    ...
-

@@ -1,9 +1,11 @@
-from .orquestrator import Orquestrator
-from src.ring.prometheus_node import PrometheusNode
+from node import Node
 import docker
 import base64
 
-class DockerOrquestrator(Orquestrator):
+class Orquestrator:
+    """
+    Docker wrapper to create and delete prometheus nodes
+    """
     def __init__(
             self,
             prometheus_docker_image: str = 'prom/prometheus',
@@ -23,7 +25,7 @@ class DockerOrquestrator(Orquestrator):
         
     def create_instance(
             self,
-            prometheus_node: PrometheusNode,
+            node: Node,
             docker_networks: list[str] | str | None = None,
             environment: dict | None = None,
         )->None:
@@ -32,33 +34,31 @@ class DockerOrquestrator(Orquestrator):
         """
         if environment is None:
             environment = dict()
-        environment['PROMETHEUS_YML'] = base64.b64encode(prometheus_node.yaml.encode('utf-8'))
+        environment['PROMETHEUS_YML'] = base64.b64encode(node.yaml.encode('utf-8'))
         container = self.client.containers.run(
-            name='prometheus-ring-' + str(prometheus_node.index),
+            name='prometheus-ring-' + str(node.index),
             image=self.prometheus_docker_image,
             network=self.api_network,
             environment=environment,
             detach=True,
-            ports={prometheus_node.port: prometheus_node.port} if prometheus_node.port is not None else None
+            ports={node.port: node.port} if node.port is not None else None
         )
-
     
-        self.containers[prometheus_node.index] = container
+        self.containers[node.index] = container
         if docker_networks is not None:
             for network_name in docker_networks:
                 network = self.client.networks.get(network_name)
                 network.connect(container)
 
-    def delete_instance(self, prometheus_node)->None:
+    def delete_instance(self, node: Node)->None:
         """
         Deletes a prometheus docker container
         """
-        container = self.containers.get(prometheus_node.index)
+        container = self.containers.get(node.index)
         if container is not None:
             container.stop()
             container.remove()
-            del self.containers[prometheus_node.index]
-        
+            del self.containers[node.index]
 
     def check_instance_health(self)->None:
         ...

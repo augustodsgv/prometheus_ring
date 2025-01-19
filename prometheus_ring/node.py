@@ -1,27 +1,26 @@
-from src.ring.target import Target
-from src.hash import hash
-from src.ring.node import Node
+from .target import Target
+from .hash import hash
 import yaml
 # from .errors.node_errors import KeyNotFoundError, NodeIsFullError
 
-class PrometheusNode(Node):
+class Node:
     """
-    Represents an Target of prometheusm
+    Represents a node in the prometheus ring, i.e. a prometheus instance
     """
     def __init__(
-            self, node_index: int,
+            self, index: int,
             capacity: int,
-            replica_count: int = 1,
             sd_url: str | None = None,
             sd_port: str | None = None,
             scrape_interval = '1m',
             refresh_interval = '1m',
-            port: int | None = None
+            port: int | None = None,
+            replica_count: int = 1,
         ) -> None:
 
-        self.replica_count = replica_count
+        self.index = index
         self.capacity = capacity
-        self.index = node_index
+        self.replica_count = replica_count
         self.ready = False
         self.targets = dict()
         self.keys_to_delete = list()
@@ -31,11 +30,11 @@ class PrometheusNode(Node):
         self.sd_port = sd_port
         self.port = port
 
-    def insert(self, key: str, value: Target) -> None:
+    def insert(self, key: str, target: Target) -> None:
         """
         Inserts a node
         """
-        self.targets[key] = value
+        self.targets[key] = target
 
     def has_key(self, key: str) -> bool:
         """
@@ -62,7 +61,7 @@ class PrometheusNode(Node):
         """
         Lists all targets from this node
         """
-        return list(self.targets.values())
+        return list(self.targets.items())
 
     def delete(self, key: str) -> Target:
         """
@@ -73,22 +72,21 @@ class PrometheusNode(Node):
             raise Exception(f'Key {key} not found')
         return self.targets.pop(key)
     
-    def update(self, key: str, new_value: Target) -> None:
+    def update(self, key: str, new_target: Target) -> None:
         """
         Updates the target of a key. Returns old object if update or None if didn't find
         This is problably not useful in this implementation
         """
-        self.targets[key] = new_value
-
-        
-    def export_keys(self, other_node: 'Node', first_key_hash: int)->None:
+        self.targets[key] = new_target
+    
+    def export_keys(self, other_node: 'Node', first_key_hash: int = -1)->None:
         """
         Exports all instances with hash equal or greater than first_key_hash to another node
+        If no fist_key_hash is provided, exports all keys to the other node
         """
-        for key in self.targets.keys():
-            if first_key_hash <= hash(key):
-                value = self.targets[key]
-                other_node.insert(key, value)     # Import and delete the key from the other node
+        for key, target in self.targets.items():
+            if hash(key) >= first_key_hash:
+                other_node.insert(key, target)     # Import and delete the key from the other node
                 self.keys_to_delete.append(key)
         self.clean_keys()
 
@@ -104,22 +102,21 @@ class PrometheusNode(Node):
         """
         Calculates the mean of the hash all keys of the node
         """
-        
         return sum([hash(key) for key in self.targets.keys()]) // len(self.targets.keys())
     
     # def __str__(self) -> str:
     #     base_str = []
-    #     for key, value in self.targets.items():
-    #         base_str.append(f'{key}: {value}')
+    #     for key, target in self.targets.items():
+    #         base_str.append(f'{key}: {target}')
 
     #     return ' '.join(base_str)
 
     @property
-    def load(self) -> float:
+    def load(self) -> int:
         """
-        Calculates the load of the node
+        Calculates the load of the node. Value ranges from 0 to 100
         """
-        return len(self.targets) / self.capacity
+        return int(len(self.targets.keys()) / self.capacity * 100)
     
     # Prometheus specific functions
     def set_node_ready(self) -> None:
@@ -157,7 +154,7 @@ class PrometheusNode(Node):
                     'relabel_configs': [
                         {
                             'action': 'keep',
-                            'source_labels': ['node_index'],
+                            'source_labels': ['index'],
                             'regex': str(self.index)
                         }
                     ]
