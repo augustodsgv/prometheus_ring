@@ -9,7 +9,7 @@ def test_insert_one_target():
     node.insert('1234', t1)
     assert node.get('1234') == t1
 
-def test_prometheus_node_yaml():
+def test_prometheus_node_zero_yaml():
     node = Node(index=0, capacity=10, sd_url='localhost', sd_port='9090')
     expected_yaml = """global:
   scrape_interval: 1m
@@ -23,6 +23,31 @@ scrape_configs:
     source_labels:
     - index
     regex: '0'
+"""
+    assert node.yaml == expected_yaml
+
+def test_prometheus_other_node_yaml():
+    node = Node(
+        index=1234,
+        capacity=15,
+        sd_url='prometheus-ring',
+        sd_port='9988',
+        scrape_interval='15s',
+        refresh_interval='45m',
+        port='8899', 
+    )
+    expected_yaml = """global:
+  scrape_interval: 15s
+scrape_configs:
+- job_name: prometheus_ring_sd
+  http_sd_configs:
+  - url: http://prometheus-ring:9988/targets
+    refresh_interval: 45m
+  relabel_configs:
+  - action: keep
+    source_labels:
+    - index
+    regex: '1234'
 """
     assert node.yaml == expected_yaml
 
@@ -163,7 +188,7 @@ def test_export_even_number_of_keys():
     node1.insert('8765', t4)
     node1.insert('abcd', t5)
 
-    # Once hash is an one-way function, neet to keep track of it
+    # Once hash is an one-way function, need to keep track of it
     hash_to_ids = {
         hash('1234'): '1234',
         hash('5678'): '5678',
