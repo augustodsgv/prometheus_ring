@@ -11,6 +11,6 @@ class Target(BaseModel, frozen=True):
     def endpoint(self)->str:
         return f'{self.address}:{self.metrics_port}'
 
-    @property
-    def hash(self)->int:
-        return hash(id)         # For now, only using the id to hash
+    # @property
+    # def hash(self)->int:
+    #     return hash(id)         # For now, only using the id to hash

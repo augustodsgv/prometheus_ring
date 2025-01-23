@@ -160,6 +160,8 @@ class BinarySearchTree(AbstractDataType):
     def find_max_smaller_than(self, key: int)->Any:
         """
         Returns any value that was stored in this node
+        If equal, returns the node itself
+        WARN: this is problably a bad name for it, but nevermind
         """
         node = self._find_max_smaller_than(self.root, key, None)
 
@@ -168,6 +170,9 @@ class BinarySearchTree(AbstractDataType):
     def _find_max_smaller_than(self, root, key: int, max_node)->BSTNode:
         if root is None:
             return None
+
+        if root.key == key:         # If is the node, 
+            return root
 
         if root.key < key:          # If root is less than key: int, we can try to go right and increase our node keyue
             max_node = root
@@ -186,6 +191,9 @@ class BinarySearchTree(AbstractDataType):
         if root is None:
             return max_node
         
+        if root.key == key:
+            return key
+
         if root.key > key:          # If root is greater than key: int, we can try to go left and decreate our node key
             max_node = root
             return self._find_min_greater_than(root.right, key, max_node)

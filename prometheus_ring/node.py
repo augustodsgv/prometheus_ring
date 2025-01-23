@@ -1,8 +1,8 @@
 from .target import Target
-from .hash import hash
+from .hash import stable_hash
 import yaml
-# from .errors.node_errors import KeyNotFoundError, NodeIsFullError
-
+from statistics import median
+from math import ceil
 class Node:
     """
     Represents a node in the prometheus ring, i.e. a prometheus instance
@@ -16,6 +16,9 @@ class Node:
             refresh_interval = '1m',
             port: int | None = None,
             replica_count: int = 1,
+            metrics_database_url: str | None = None,
+            metrics_database_port: int | None = None,
+            metrics_database_path: str | None = None,
         ) -> None:
 
         self.index = index
@@ -29,6 +32,9 @@ class Node:
         self.sd_url = sd_url
         self.sd_port = sd_port
         self.port = port
+        self.metrics_database_url = metrics_database_url
+        self.metrics_database_port = metrics_database_port
+        self.metrics_database_path = metrics_database_path
 
     def insert(self, key: str, target: Target) -> None:
         """
@@ -85,7 +91,7 @@ class Node:
         If no fist_key_hash is provided, exports all keys to the other node
         """
         for key, target in self.targets.items():
-            if hash(key) >= first_key_hash:
+            if stable_hash(key) >= first_key_hash:
                 other_node.insert(key, target)     # Import and delete the key from the other node
                 self.keys_to_delete.append(key)
         self.clean_keys()
@@ -100,9 +106,10 @@ class Node:
 
     def calc_mid_hash(self)->int:
         """
-        Calculates the mean of the hash all keys of the node
+        Calculates the mean hash of all of the node
+        A Future discussion if this is the best way to calculate the median instead.
         """
-        return sum([hash(key) for key in self.targets.keys()]) // len(self.targets.keys())
+        return sum([stable_hash(key) for key in self.targets.keys()]) // len(self.targets.keys())
     
     # def __str__(self) -> str:
     #     base_str = []
@@ -159,8 +166,18 @@ class Node:
                         }
                     ]
                 }
-            ]
+            ],
         }
+        # TODO: maybe this X-Scope-OrgID should be the cloud region
+        if self.metrics_database_url is not None:
+            prometheus_yml['remote_write'] = [
+                {
+                    'url': f'http://{self.metrics_database_url}:{self.metrics_database_port}{self.metrics_database_path}',
+                    'headers': {
+                        'X-Scope-OrgID': 'demo'
+                    }
+                }
+            ]
         return yaml.dump(prometheus_yml, sort_keys=False)
 
     def __repr__(self):

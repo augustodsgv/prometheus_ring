@@ -1,6 +1,6 @@
 from .adt.abstract_data_type import AbstractDataType
 from .node import Node
-from .hash import hash
+from .hash import stable_hash
 from .target import Target
 
 import uuid
@@ -64,18 +64,18 @@ class Ring:
         """
         if key is None:
             key = str(uuid.uuid4())
-
         # Checking for duplicated keys. Current implementations does not support it
-        node_to_search = self._find_node(hash(key))
+        node_to_search = self._find_node(stable_hash(key))
         if node_to_search.has_key(key):
             raise KeyAlreadyExistsError(f'Key {key} already exists')
         
-        key_hash = hash(key)
+        key_hash = stable_hash(key)
+        print(f'key hash: {key_hash}')
         node_to_insert: Node = self._find_node(key_hash)
         logger.debug(f'Inserting {target} into node {node_to_insert}')
         node_to_insert.insert(key, target)
 
-        if node_to_insert.load >= self.node_max_load:                           # Detection if made after deletion to ensure it scales up at the right time
+        if node_to_insert.load > self.node_max_load:                           # Detection if made after deletion to ensure it scales up at the right time
             logger.info(f'Node {node_to_insert.index} is full: scaling up the ring')
             new_node = self._split_node(node_to_insert)
             return new_node
@@ -85,7 +85,7 @@ class Ring:
         """
         Returns the target of the key. Raises an exception if not found
         """
-        key_hash = hash(key)
+        key_hash = stable_hash(key)
         node_set_to_search: Node = self._find_node(key_hash)
         if not node_set_to_search.has_key(key):
             raise KeyNotFoundError(f'Key {key} not found')
@@ -96,7 +96,7 @@ class Ring:
         Updates the Target of a key. Returns old object if update or None if didn't find
         Probly not useful in this implementation
         """
-        key_hash = hash(key)
+        key_hash = stable_hash(key)
         node_set_to_search: Node = self._find_node(key_hash)
         if not node_set_to_search.has_key(key):
             raise KeyNotFoundError(f'Key {key} not found')
@@ -107,14 +107,12 @@ class Ring:
         Deletes a target from the ring.
         If node reachs it's minimum load, it will be removed from the ring
         """
-        key_hash = hash(key)
+        key_hash = stable_hash(key)
         node_to_search: Node = self._find_node(key_hash)
         if not node_to_search.has_key(key):
             raise KeyNotFoundError(f'Key {key} not found')
         # TODO: If the previous node is full, it will be overloaded. Should implement something to treat this
-        print(f'node load before deletion {node_to_search.load}')
         node_to_search.delete(key)
-        print(f'node load after deletion {node_to_search.load}')
         if node_to_search.load <= self.node_min_load:            # Scaling down the cluster
             if node_to_search == self.node_zero:
                 """
@@ -123,7 +121,6 @@ class Ring:
                 """
                 print('node zero: not deleting')
                 return None
-            print('deleting node')
             logger.info(f'Node {node_to_search.index} is underloaded: scaling down the ring')
             self._delete_node(node_to_search.index)
             return node_to_search
@@ -147,6 +144,7 @@ class Ring:
         Returns the new node
         """
         node_mid_hash = node.calc_mid_hash()        # The new node will get half of the keys of the old node.
+        print(node_mid_hash)
         new_node = Node(
             index=node_mid_hash,
             capacity=self.node_capacity,
