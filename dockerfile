@@ -10,4 +10,4 @@ COPY . /app
 
 EXPOSE 9988
 
-CMD ["uvicorn", "--host", "0.0.0.0", "--port", "9988", "--log-level", "debug", "src.main:app"]
+CMD ["uvicorn", "--host", "0.0.0.0", "--port", "9988", "--log-level", "debug", "prometheus_ring.main:app"]

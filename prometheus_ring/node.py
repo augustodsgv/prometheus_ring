@@ -160,7 +160,7 @@ class Node:
                     'relabel_configs': [
                         {
                             'action': 'keep',
-                            'source_labels': ['index'],
+                            'source_labels': ['node_index'],
                             'regex': str(self.index)
                         }
                     ]
