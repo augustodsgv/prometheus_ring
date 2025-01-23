@@ -20,6 +20,9 @@ NODE_MIN_LOAD=int(os.environ.get('NODE_MIN_LOAD', '2'))
 NODE_MAX_LOAD=int(os.environ.get('NODE_MAX_LOAD', '3'))
 NODE_SCRAPE_INTERVAL=os.environ.get('NODE_SCRAPE_INTERVAL', '1m')
 NODE_SD_REFRESH_INTERVAL=os.environ.get('NODE_SD_REFRESH_INTERVAL', '1m')
+METRICS_DATABASE_URL=os.environ.get('METRICS_DATABASE_URL', None)
+METRICS_DATABASE_PORT=os.environ.get('METRICS_DATABASE_PORT', None)
+METRICS_DATABASE_PATH=os.environ.get('METRICS_DATABASE_PATH', None)
 
 LOG_LEVEL = os.environ.get('LOG_LEVEL', "INFO").upper()
 LOGGING_CONFIG = {
@@ -65,7 +68,10 @@ ring = Ring(
     sd_port=API_PORT,
     node_scrape_interval=NODE_SCRAPE_INTERVAL,
     node_sd_refresh_interval=NODE_SD_REFRESH_INTERVAL,
-    adt=bst
+    adt=bst,
+    metrics_database_url=METRICS_DATABASE_URL,
+    metrics_database_port=METRICS_DATABASE_PORT,
+    metrics_database_path=METRICS_DATABASE_PATH
     )
 
 docker_orquestrator = Orquestrator(DOCKER_PROMETHEUS_IMAGE, API_DOCKER_NETWORK)

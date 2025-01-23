@@ -28,6 +28,9 @@ class Ring:
             node_replica_count: int = 1,
             node_sd_refresh_interval: str = '1m',
             node_scrape_interval: str = '1m',
+            metrics_database_url: str | None = None,
+            metrics_database_port: int | None = None,
+            metrics_database_path: str | None = None,
         )->None:
 
         self.node_capacity = node_capacity
@@ -40,6 +43,9 @@ class Ring:
         self.ring = adt
         self.sd_url = sd_url
         self.sd_port = sd_port
+        self.metrics_database_url = metrics_database_url
+        self.metrics_database_port = metrics_database_port
+        self.metrics_database_path = metrics_database_path
         """
         Creating node zero. It can not be deleted.
         """
@@ -51,7 +57,11 @@ class Ring:
             replica_count=self.node_replica_count,
             refresh_interval=self.node_sd_refresh_interval,
             scrape_interval=self.node_scrape_interval,
-            port=9090       # Port of the first node    
+            metrics_database_url=self.metrics_database_url,
+            metrics_database_port=self.metrics_database_port,
+            metrics_database_path=self.metrics_database_path,
+            port=9090       # Port of the first node
+
             # TODO: Make an more versitile way to set the port
             )
         self.ring.insert(0, self.node_zero)
@@ -152,8 +162,11 @@ class Ring:
             sd_url=self.sd_url,
             sd_port=self.sd_port,
             scrape_interval=self.node_scrape_interval,
-            refresh_interval=self.node_sd_refresh_interval
-            )
+            refresh_interval=self.node_sd_refresh_interval,
+            metrics_database_url=self.metrics_database_url,
+            metrics_database_port=self.metrics_database_port,
+            metrics_database_path=self.metrics_database_path,
+        )
         self.ring.insert(node_mid_hash, new_node)
         node.export_keys(new_node, node_mid_hash)
         self.node_count += 1
