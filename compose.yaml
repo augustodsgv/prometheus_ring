@@ -24,8 +24,116 @@ services:
     - METRICS_DATABASE_PORT=9009
     - METRICS_DATABASE_PATH=/api/v1/push
 
+  minio:
+    image: minio/minio
+    entrypoint: [""]
+    command: ["sh", "-c", "mkdir -p /data/mimir && minio server --quiet /data"]
+    environment:
+      - MINIO_ROOT_USER=mimir
+      - MINIO_ROOT_PASSWORD=supersecret
+    volumes:
+      - minio-data:/data
+    ports:
+      - "9123:9000"
+    networks:
+      - prometheus-ring
+
+  grafana:
+    image: grafana/grafana:latest
+    # pull_policy: always
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_USERS_DEFAULT_THEME=light
+      - GF_LOG_MODE=console
+      - GF_LOG_LEVEL=critical
+    volumes:
+      # - ./config/grafana-provisioning-dashboards.yaml:/etc/grafana/provisioning/dashboards/provisioning-dashboards.yaml:ro
+      - ./mimir/grafana-provisioning-datasources.yaml:/etc/grafana/provisioning/datasources/provisioning-datasources.yaml:ro
+    ports:
+      - 9000:3000
+    networks:
+      - prometheus-ring
+
+  cloud-metrics-generator:
+    image: augustodsgv/cloud_metrics_generator
+    environment:
+      - INSTANCE_ID=1234
+      - TENANT_ID=4321
+      - INSTANCE_REGION=us-west-2
+      - INSTANCE_TYPE=K8SAAS
+      - SCRAPE_INTERVAL=5
+    # ports:
+    #   - "8000:8000"
+    pull_policy: always
+    networks:
+      - prometheus-ring
+    deploy:
+      mode: replicated
+      replicas: 15
+
+  load-balancer:
+    image: nginx:latest
+    volumes:
+      - ./mimir/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - "mimir-1"
+      - "mimir-2"
+      - "mimir-3"
+    ports:
+      - "9009:9009"
+    networks:
+      - prometheus-ring
+
+  mimir-1:
+    image: grafana/mimir:latest
+    command: ["-config.file=/etc/mimir.yaml"]
+    hostname: mimir-1
+    depends_on:
+      - minio
+    volumes:
+      - ./mimir/mimir.yaml:/etc/mimir.yaml:ro
+      - ./mimir/alertmanager.yaml:/etc/alertmanager-fallback-config.yaml:ro
+      - mimir-1-data:/data
+    networks:
+      - prometheus-ring
+
+  mimir-2:
+    image: grafana/mimir:latest
+    command: ["-config.file=/etc/mimir.yaml"]
+    hostname: mimir-2
+    depends_on:
+      - minio
+    volumes:
+      - ./mimir/mimir.yaml:/etc/mimir.yaml:ro
+      - ./mimir/alertmanager.yaml:/etc/alertmanager-fallback-config.yaml:ro
+      - mimir-2-data:/data
+    networks:
+      - prometheus-ring
+
+  mimir-3:
+    image: grafana/mimir:latest
+    command: ["-config.file=/etc/mimir.yaml"]
+    hostname: mimir-3
+    depends_on:
+      - minio
+    volumes:
+      - ./mimir/mimir.yaml:/etc/mimir.yaml
+      - ./mimir/alertmanager.yaml:/etc/alertmanager-fallback-config.yaml
+      - mimir-3-data:/data
+    networks:
+      - prometheus-ring
+
+
+volumes:
+  mimir-1-data:
+  mimir-2-data:
+  mimir-3-data:
+  minio-data:
+
 networks:
   # prometheus-ring-api-network:
   #   external: true
   prometheus-ring:
     external: true
+
