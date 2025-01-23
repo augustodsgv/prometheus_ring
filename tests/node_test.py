@@ -1,7 +1,9 @@
 import pytest
+import pytest_mock
 from prometheus_ring.node import Node
 from prometheus_ring.target import Target
-from prometheus_ring.hash import hash
+from prometheus_ring.hash import stable_hash
+import math
 
 def test_insert_one_target():
     t1 = Target(id='1234', name='t1', address='t1-address', metrics_port=8000, metrics_path='/metrics')
@@ -48,6 +50,38 @@ scrape_configs:
     source_labels:
     - index
     regex: '1234'
+"""
+    assert node.yaml == expected_yaml
+
+def test_prometheus_remote_storage_yaml():
+    node = Node(
+        index=1234,
+        capacity=15,
+        sd_url='prometheus-ring',
+        sd_port='9988',
+        scrape_interval='15s',
+        refresh_interval='45m',
+        port='8899',
+        metrics_database_url='database',
+        metrics_database_port=19090,
+        metrics_database_path='/api/v1/push'
+    )
+    expected_yaml = """global:
+  scrape_interval: 15s
+scrape_configs:
+- job_name: prometheus_ring_sd
+  http_sd_configs:
+  - url: http://prometheus-ring:9988/targets
+    refresh_interval: 45m
+  relabel_configs:
+  - action: keep
+    source_labels:
+    - index
+    regex: '1234'
+remote_write:
+- url: http://database:19090/api/v1/push
+  headers:
+    X-Scope-OrgID: demo
 """
     assert node.yaml == expected_yaml
 
@@ -111,23 +145,77 @@ def test_node_load_50_after_deletion():
     node.delete('1234')
     assert node.load == 50
 
-def test_calc_mid_hash():
-    node1 = Node(index=0, capacity=10)
-    t1 = Target(id='1234', name='t1', address='t1-address', metrics_port=8000, metrics_path='/metrics')
-    t2 = Target(id='5678', name='t2', address='t2-address', metrics_port=8000, metrics_path='/metrics')
-    t3 = Target(id='4321', name='t1', address='t1-address', metrics_port=8000, metrics_path='/metrics')
-    t4 = Target(id='8765', name='t1', address='t1-address', metrics_port=8000, metrics_path='/metrics')
-    node1.insert('1234', t1)
-    node1.insert('5678', t2)
-    node1.insert('4321', t3)
-    node1.insert('8765', t4)
+def test_calc_mid_hash_even_elements(mocker):
+    # Mocking the hash function to test the calc_mid_hash
+    mocker.patch('prometheus_ring.node.stable_hash', side_effect=lambda x: int(x))
 
-    ids = ['1234', '5678', '4321', '8765']
-    hashed_ids = [hash(id) for id in ids]              # I don't know the hashes, so i calculate them
-    hash_mean = sum(hashed_ids) // 4
-    print(hash_mean)
-    print(hashed_ids)
-    assert node1.calc_mid_hash() == hash_mean
+    node1 = Node(index=0, capacity=10)
+    t1 = Target(id='1', name='t1', address='t1-address', metrics_port=8000, metrics_path='/metrics')
+    t2 = Target(id='2', name='t2', address='t2-address', metrics_port=8000, metrics_path='/metrics')
+    t3 = Target(id='3', name='t1', address='t1-address', metrics_port=8000, metrics_path='/metrics')
+    t4 = Target(id='7', name='t1', address='t1-address', metrics_port=8000, metrics_path='/metrics')
+    node1.insert('1', t1)
+    node1.insert('2', t2)
+    node1.insert('3', t3)
+    node1.insert('7', t4)
+
+    assert node1.calc_mid_hash() == 3
+
+def test_calc_mid_hash_odd_elements(mocker):
+    # Mocking the hash function to test the calc_mid_hash
+    mocker.patch('prometheus_ring.node.stable_hash', side_effect=lambda x: int(x))
+
+    node1 = Node(index=0, capacity=10)
+    t1 = Target(id='1', name='t1', address='t1-address', metrics_port=8000, metrics_path='/metrics')
+    t2 = Target(id='2', name='t2', address='t2-address', metrics_port=8000, metrics_path='/metrics')
+    t3 = Target(id='3', name='t1', address='t1-address', metrics_port=8000, metrics_path='/metrics')
+    t4 = Target(id='15', name='t1', address='t1-address', metrics_port=8000, metrics_path='/metrics')
+    t5 = Target(id='51', name='t1', address='t1-address', metrics_port=8000, metrics_path='/metrics')
+    node1.insert('1', t1)
+    node1.insert('2', t2)
+    node1.insert('3', t3)
+    node1.insert('15', t4)
+    node1.insert('51', t5)
+
+    assert node1.calc_mid_hash() == 14
+
+def test_calc_mid_hash_discrepant_even_elements(mocker):
+    # Mocking the hash function to test the calc_mid_hash
+    mocker.patch('prometheus_ring.node.stable_hash', side_effect=lambda x: int(x))
+
+    node1 = Node(index=0, capacity=10)
+    t1 = Target(id='1', name='t1', address='t1-address', metrics_port=8000, metrics_path='/metrics')
+    t2 = Target(id='2', name='t2', address='t2-address', metrics_port=8000, metrics_path='/metrics')
+    t3 = Target(id='7', name='t3', address='t3-address', metrics_port=8000, metrics_path='/metrics')
+    t4 = Target(id='500', name='t4', address='t4-address', metrics_port=8000, metrics_path='/metrics')
+    t5 = Target(id='5001', name='t5', address='t5-address', metrics_port=8000, metrics_path='/metrics')
+    t6 = Target(id='18000', name='t6', address='t6-address', metrics_port=8000, metrics_path='/metrics')
+    node1.insert('1', t1)
+    node1.insert('2', t2)
+    node1.insert('7', t3)
+    node1.insert('500', t4)
+    node1.insert('5001', t5)
+    node1.insert('18000', t6)
+    mean = 3918
+    assert node1.calc_mid_hash() == mean
+
+def test_calc_mid_hash_discrepant_odd_elements(mocker):
+    # Mocking the hash function to test the calc_mid_hash
+    mocker.patch('prometheus_ring.node.stable_hash', side_effect=lambda x: int(x))
+
+    node1 = Node(index=0, capacity=10)
+    t1 = Target(id='1', name='t1', address='t1-address', metrics_port=8000, metrics_path='/metrics')
+    t2 = Target(id='1234', name='t2', address='t2-address', metrics_port=8000, metrics_path='/metrics')
+    t3 = Target(id='4321', name='t3', address='t3-address', metrics_port=8000, metrics_path='/metrics')
+    t4 = Target(id='500', name='t4', address='t4-address', metrics_port=8000, metrics_path='/metrics')
+    t5 = Target(id='5001', name='t5', address='t5-address', metrics_port=8000, metrics_path='/metrics')
+    node1.insert('1', t1)
+    node1.insert('1234', t2)
+    node1.insert('4321', t3)
+    node1.insert('500', t4)
+    node1.insert('5001', t5)
+
+    assert node1.calc_mid_hash() == 2211
 
 def test_export_keys():
     node1 = Node(index=0, capacity=10)
@@ -152,10 +240,10 @@ def test_export_half_keys():
 
     # Once hash is an one-way function, neet to keep track of it
     hash_to_ids = {
-        hash('1234'): '1234',
-        hash('5678'): '5678',
-        hash('4321'): '4321',
-        hash('8765'): '8765'
+        stable_hash('1234'): '1234',
+        stable_hash('5678'): '5678',
+        stable_hash('4321'): '4321',
+        stable_hash('8765'): '8765'
     }
 
     hashed_ids = sorted(hash_to_ids.keys())             # I don't know the hashes, so i calculate them and sorted 
@@ -190,11 +278,11 @@ def test_export_even_number_of_keys():
 
     # Once hash is an one-way function, need to keep track of it
     hash_to_ids = {
-        hash('1234'): '1234',
-        hash('5678'): '5678',
-        hash('4321'): '4321',
-        hash('8765'): '8765',
-        hash('abcd'): 'abcd'
+        stable_hash('1234'): '1234',
+        stable_hash('5678'): '5678',
+        stable_hash('4321'): '4321',
+        stable_hash('8765'): '8765',
+        stable_hash('abcd'): 'abcd'
     }
 
     hashed_ids = sorted(hash_to_ids.keys())             # I don't know the hashes, so i calculate them and sorted 
