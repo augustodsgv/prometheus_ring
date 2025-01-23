@@ -34,25 +34,42 @@ class BinarySearchTree(AbstractDataType):
                 self._insert(root.right, key, value)
 
     def search(self, key)-> Any | None:
-        return self._search(self.root, key)
+        node = self._search(self.root, key)
+        if node is None:
+            return None
+        return node.value
 
     def _search(self, root, key)->BSTNode:
         if root is None or root.key == key:
             return root
+        
         if key < root.key:
             return self._search(root.left, key)
+        
         return self._search(root.right, key)
 
     def update(self, key: int, new_value: Any)->Any | None:
         """
         Updates the node value, if found. Else, returns None
         """
-        node = self.search(key)
+        node = self._update(self.root, key)
         if node is None:
             return None
         old_value = node.value
         node.value = new_value
         return old_value
+    
+    def _update(self, root: BSTNode, key: int)->BSTNode:
+        """
+        Searches the value for the update operation
+        """
+        if root is None or root.key == key:
+            return root
+        
+        if root.key < key:
+            return self._update(root.right, key)
+        
+        return self._update(root.left, key)
     
     def inorder(self)->list[Any | None]:
         return self._inorder(self.root)
@@ -160,43 +177,45 @@ class BinarySearchTree(AbstractDataType):
     def find_max_smaller_than(self, key: int)->Any:
         """
         Returns any value that was stored in this node
-        If equal, returns the node itself
         WARN: this is problably a bad name for it, but nevermind
         """
         node = self._find_max_smaller_than(self.root, key, None)
-
+        if node is None:
+            return None
         return node.value
 
     def _find_max_smaller_than(self, root, key: int, max_node)->BSTNode:
         if root is None:
-            return None
+            return max_node
 
-        if root.key == key:         # If is the node, 
-            return root
-
-        if root.key < key:          # If root is less than key: int, we can try to go right and increase our node keyue
+        # if root.key == key:         # If is the node, 
+        #     return root
+        if root.key < key:          # If root is less than key: we can try to go right and increase our node key
             max_node = root
             return self._find_max_smaller_than(root.right, key, max_node)
-        
-        else:                       # If root is greater, we can only go try to get an node with smaller number
+        else:                 
+                  # If root is greater, we can only go try to get an node with smaller number
             return self._find_max_smaller_than(root.left, key, max_node)
         
     def find_min_greater_than(self, key: int)->Any:
         """
         Returns any value that was stored in this node
         """
-        return self._find_min_greater_than(self.root, key, None).value
+        node = self._find_min_greater_than(self.root, key, None)
+        if node is None:
+            return None
+        return node.value
 
     def _find_min_greater_than(self, root, key: int, max_node)->BSTNode:
         if root is None:
             return max_node
         
-        if root.key == key:
-            return key
+        # if root.key == key:
+        #     return key
 
         if root.key > key:          # If root is greater than key: int, we can try to go left and decreate our node key
             max_node = root
-            return self._find_min_greater_than(root.right, key, max_node)
+            return self._find_min_greater_than(root.left, key, max_node)
         
         else:                       # If root is less, we can only go try to get an node with a greater number
-            return self._find_min_greater_than(root.left, key, max_node)
+            return self._find_min_greater_than(root.right, key, max_node)

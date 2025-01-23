@@ -32,6 +32,7 @@ class API:
         Unregisters a target being monitored by prometheus.
         If the node is underloaded, scales down the ring
         """
+        logger.debug(f'nodes: {self.ring.get_nodes()}')
         node_to_delete = self.ring.delete(target_id)         # Using the id as a hash, for now
         if node_to_delete is not None:
             self.orquestrator.delete_instance(node_to_delete)

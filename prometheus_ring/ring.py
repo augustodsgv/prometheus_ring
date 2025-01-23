@@ -119,6 +119,7 @@ class Ring:
         """
         key_hash = stable_hash(key)
         node_to_search: Node = self._find_node(key_hash)
+        logger.debug(f'Deleting key {key} {key_hash} from node {node_to_search.index}')
         if not node_to_search.has_key(key):
             raise KeyNotFoundError(f'Key {key} not found')
         # TODO: If the previous node is full, it will be overloaded. Should implement something to treat this
@@ -146,7 +147,7 @@ class Ring:
         """
         Finds the nearest node to a hash, i.e. the greatest node that is smaler than the provided hash
         """
-        return self.ring.find_max_smaller_than(hash)
+        return self.ring.find_max_smaller_than(hash + 1)            # +1 so if a node hash the same value it will be included
         
     def _split_node(self, node: Node)->Node:
         """
@@ -184,7 +185,7 @@ class Ring:
         if node_to_delete is None:
             logger.info(f'Node with index {index} not found to delete')
             raise NodeNotFoundError(f'Node with index {index} not found')
-        prior_node: Node = self.ring.find_max_smaller_than(index - 1)       # Ensures
+        prior_node: Node = self.ring.find_max_smaller_than(index)       # Ensures
         print(f'prior node: {prior_node}')
         logger.info(f'Exporting Keys of node {index} to the node {prior_node.index}')
         node_to_delete.export_keys(prior_node, 0)           # Uses 0 to ensure that all of if keys are exported

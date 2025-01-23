@@ -1,9 +1,9 @@
-from adt.binary_search_tree import BinarySearchTree
-from target import Target
-from node import Node
-from ring import Ring, KeyNotFoundError, KeyAlreadyExistsError
-from orquestrator import Orquestrator
-from api import API
+from .adt.binary_search_tree import BinarySearchTree
+from .target import Target
+from .node import Node
+from .ring import Ring, KeyNotFoundError, KeyAlreadyExistsError
+from .orquestrator import Orquestrator
+from .api import API
 import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
@@ -16,14 +16,14 @@ API_ENDPOINT = os.environ.get('API_ENDPOINT', "prometheus-ring-api")
 API_PORT = int(os.environ.get('API_PORT', 9988)
 )
 NODE_CAPACITY=int(os.environ.get('NODE_CAPACITY', '2'))
-NODE_MIN_LOAD=int(os.environ.get('NODE_MIN_LOAD', '2'))
-NODE_MAX_LOAD=int(os.environ.get('NODE_MAX_LOAD', '3'))
+NODE_MIN_LOAD=int(os.environ.get('NODE_MIN_LOAD', '25'))
+NODE_MAX_LOAD=int(os.environ.get('NODE_MAX_LOAD', '75'))
 NODE_SCRAPE_INTERVAL=os.environ.get('NODE_SCRAPE_INTERVAL', '1m')
 NODE_SD_REFRESH_INTERVAL=os.environ.get('NODE_SD_REFRESH_INTERVAL', '1m')
 METRICS_DATABASE_URL=os.environ.get('METRICS_DATABASE_URL', None)
 METRICS_DATABASE_PORT=os.environ.get('METRICS_DATABASE_PORT', None)
 METRICS_DATABASE_PATH=os.environ.get('METRICS_DATABASE_PATH', None)
-
+print(os.environ)
 LOG_LEVEL = os.environ.get('LOG_LEVEL', "INFO").upper()
 LOGGING_CONFIG = {
     "version": 1,
@@ -77,13 +77,13 @@ ring = Ring(
 docker_orquestrator = Orquestrator(DOCKER_PROMETHEUS_IMAGE, API_DOCKER_NETWORK)
 api = API(ring, docker_orquestrator)
 # The first node has to be created manually
-first_node = ring.get_initial_node()
+first_node = ring.node_zero
 docker_orquestrator.create_instance(first_node)
 
 app = FastAPI()
 
 @app.post("/register-target")
-def register_target(target: Target):
+async def register_target(target: Target):
     try:
         api.register_target(target)
         return {"message": "Target registered successfully!"}
@@ -91,15 +91,24 @@ def register_target(target: Target):
         raise HTTPException(status_code=400, detail=f"Error registering target: id {target.id} already exists")
 
 @app.delete("/unregister-target")
-def unregister_target(target_id: str):
+async def unregister_target(target_id: str):
     try:
+        # logger.debug(api.ring._find_node(stable_hash(target_id)))
         api.unregister_target(target_id)
         return {"message": "Target unregistered successfully!"}
     except KeyNotFoundError as e:
         raise HTTPException(status_code=404, detail=f"Error deregistering instance: ID {target_id} not found")
 
 @app.get("/targets")
-def get_targets():
+async def get_targets():
+    from .hash import stable_hash
     targets = api.build_targets_json()
+    nodes = api.ring.get_nodes()
+    for node in nodes:
+        logger.debug(f'node: {node}')
+        for target in node.list_items():
+            logger.debug(f'target: {target} hash {stable_hash(target.id)}')
+        logger.debug(f'targets {targets}')
+        
     logger.debug(f'targets {targets}')
     return JSONResponse(content=targets)

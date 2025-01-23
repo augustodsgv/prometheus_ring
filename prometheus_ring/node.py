@@ -1,8 +1,7 @@
 from .target import Target
 from .hash import stable_hash
 import yaml
-from statistics import median
-from math import ceil
+
 class Node:
     """
     Represents a node in the prometheus ring, i.e. a prometheus instance
