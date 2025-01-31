@@ -1,11 +1,18 @@
 global:
-  scrape_interval: 1m
+  scrape_interval: 5s
+  external_labels:
+    cluster: node-0
+    __replica__: a
 scrape_configs:
-- http_sd_configs:
-  - refresh_interval: 1m
-    url: http://localhost:8500/targets
-  job_name: prometheus_ring_sd
+- job_name: prometheus_ring_sd
+  consul_sd_configs:
+  - server: http://consul:8500
   relabel_configs:
   - action: keep
-    regex: '1'
-    source_labels: [node_index]
+    source_labels:
+    - __meta_consul_tags
+    regex: .*ring-node-0.*
+remote_write:
+- url: http://load-balancer:9009/api/v1/push
+  headers:
+    X-Scope-OrgID: demo

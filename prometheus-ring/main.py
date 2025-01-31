@@ -1,6 +1,6 @@
 from .adt.binary_search_tree import BinarySearchTree
 from .target import Target
-from .node import Node
+from .service_discovery import ServiceDiscovery
 from .ring import Ring, KeyNotFoundError, KeyAlreadyExistsError
 from .orquestrator import Orquestrator
 from .api import API
@@ -18,12 +18,15 @@ API_PORT = int(os.environ.get('API_PORT', 9988)
 NODE_CAPACITY=int(os.environ.get('NODE_CAPACITY', '2'))
 NODE_MIN_LOAD=int(os.environ.get('NODE_MIN_LOAD', '25'))
 NODE_MAX_LOAD=int(os.environ.get('NODE_MAX_LOAD', '75'))
+NODE_REPLICATION_NUM=int(os.environ.get('NODE_REPLICATION_NUM', 1))
 NODE_SCRAPE_INTERVAL=os.environ.get('NODE_SCRAPE_INTERVAL', '1m')
-NODE_SD_REFRESH_INTERVAL=os.environ.get('NODE_SD_REFRESH_INTERVAL', '1m')
+SD_REFRESH_INTERVAL=os.environ.get('SD_REFRESH_INTERVAL', '1m')
+SD_PROVIDER=os.environ.get('SD_PROVIDER', 'consul')
+SD_PORT=os.environ.get('SD_PORT', 8500)
+SD_HOST=os.environ.get('SD_HOST', 'consul')
 METRICS_DATABASE_URL=os.environ.get('METRICS_DATABASE_URL', None)
 METRICS_DATABASE_PORT=os.environ.get('METRICS_DATABASE_PORT', None)
 METRICS_DATABASE_PATH=os.environ.get('METRICS_DATABASE_PATH', None)
-print(os.environ)
 LOG_LEVEL = os.environ.get('LOG_LEVEL', "INFO").upper()
 LOGGING_CONFIG = {
     "version": 1,
@@ -64,18 +67,21 @@ ring = Ring(
     node_capacity=NODE_CAPACITY,
     node_min_load=NODE_MIN_LOAD,
     node_max_load=NODE_MAX_LOAD,
-    sd_url=API_ENDPOINT,
-    sd_port=API_PORT,
+    node_replica_count=NODE_REPLICATION_NUM,
+    sd_provider=SD_PROVIDER,
+    sd_host=SD_HOST,
+    sd_port=SD_PORT,
     node_scrape_interval=NODE_SCRAPE_INTERVAL,
-    node_sd_refresh_interval=NODE_SD_REFRESH_INTERVAL,
+    sd_refresh_interval=SD_REFRESH_INTERVAL,
     adt=bst,
     metrics_database_url=METRICS_DATABASE_URL,
     metrics_database_port=METRICS_DATABASE_PORT,
     metrics_database_path=METRICS_DATABASE_PATH
-    )
+)
 
 docker_orquestrator = Orquestrator(DOCKER_PROMETHEUS_IMAGE, API_DOCKER_NETWORK)
-api = API(ring, docker_orquestrator)
+service_discovery = ServiceDiscovery(SD_HOST, SD_PORT)
+api = API(ring, docker_orquestrator, service_discovery)
 # The first node has to be created manually
 first_node = ring.node_zero
 docker_orquestrator.create_instance(first_node)

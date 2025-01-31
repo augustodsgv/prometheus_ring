@@ -21,41 +21,46 @@ class Orquestrator:
         self.api_network = api_network
         self.prometheus_docker_image = prometheus_docker_image
         self.docker_url = docker_url
-        self.containers = dict()
-        
+        self.containers: dict[list[str]]= dict()        # Keeps track of each instance and it's replicas
+        self.curr_port = 39090
+
     def create_instance(
             self,
             node: Node,
             docker_networks: list[str] | str | None = None,
             environment: dict | None = None,
         )->None:
+        print(node.replica_count)
         """
-        Instanciates a prometheus docker container
+        Instanciates a prometheus docker container and it's replicas
         """
         if environment is None:
             environment = dict()
-        environment['PROMETHEUS_YML'] = base64.b64encode(node.yaml.encode('utf-8'))
-        container = self.client.containers.run(
-            name='prometheus-ring-' + str(node.index),
-            image=self.prometheus_docker_image,
-            network=self.api_network,
-            environment=environment,
-            detach=True,
-            ports={node.port: node.port} if node.port is not None else None
-        )
-    
-        self.containers[node.index] = container
-        if docker_networks is not None:
-            for network_name in docker_networks:
-                network = self.client.networks.get(network_name)
-                network.connect(container)
+        self.containers[node.index] = []
+
+        for replica_name, replica_yaml in node.get_node_yamls().items():
+            self.curr_port += 1         # Gambiarra só pra criar portas não alocadas para container
+            environment['PROMETHEUS_YML'] = base64.b64encode(replica_yaml.encode('utf-8'))
+            container = self.client.containers.run(
+                name=replica_name,
+                image=self.prometheus_docker_image,
+                network=self.api_network,
+                environment=environment,
+                detach=True,
+                ports={node.port: self.curr_port} if node.port is not None else None
+            )
+        
+            self.containers[node.index].append(container)
+            if docker_networks is not None:
+                for network_name in docker_networks:
+                    network = self.client.networks.get(network_name)
+                    network.connect(container)
 
     def delete_instance(self, node: Node)->None:
         """
         Deletes a prometheus docker container
         """
-        container = self.containers.get(node.index)
-        if container is not None:
+        for container in self.containers.get(node.index):
             container.stop()
             container.remove()
             del self.containers[node.index]

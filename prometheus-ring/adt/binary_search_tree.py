@@ -11,10 +11,7 @@ class BSTNode:
 class BinarySearchTree(AbstractDataType):
     def __init__(self):
         self.root: BSTNode | None = None
-
-    # def __iter__(self):
-    #     return self.inorder()
-
+        
     def insert(self, key: int, value: Any):
         if self.root is None:
             self.root = BSTNode(key, value)

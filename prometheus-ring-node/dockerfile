@@ -6,6 +6,9 @@ ADD entry /
 
 ENTRYPOINT  ["/entry"]
 CMD         [   "--config.file=/etc/prometheus/prometheus.yml", \
-                "--storage.tsdb.path=/prometheus", \
+                # "--storage.tsdb.path=/prometheus", \
+                "--storage.agent.path=/prometheus", \
                 "--web.console.libraries=/usr/share/prometheus/console_libraries", \
-                "--web.console.templates=/usr/share/prometheus/consoles" ]
+                "--web.console.templates=/usr/share/prometheus/consoles", \
+                "--enable-feature=agent" \
+                ]

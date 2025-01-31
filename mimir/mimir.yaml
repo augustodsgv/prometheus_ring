@@ -39,3 +39,14 @@ alertmanager:
 
 server:
   log_level: warn
+
+limits:
+  accept_ha_samples: true
+
+distributor:
+  ha_tracker:
+    enable_ha_tracker: true
+    kvstore:
+      store: consul
+      consul: 
+        host: consul:8500

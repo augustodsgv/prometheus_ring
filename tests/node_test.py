@@ -12,9 +12,12 @@ def test_insert_one_target():
     assert node.get('1234') == t1
 
 def test_prometheus_node_zero_yaml():
-    node = Node(index=0, capacity=10, sd_url='localhost', sd_port='9090')
+    node = Node(index=0, capacity=10, replica_count=1, sd_url='localhost', sd_port='9090')
     expected_yaml = """global:
   scrape_interval: 1m
+  external_labels:
+    cluster: node-0
+    __replica__: a
 scrape_configs:
 - job_name: prometheus_ring_sd
   http_sd_configs:
@@ -23,15 +26,19 @@ scrape_configs:
   relabel_configs:
   - action: keep
     source_labels:
-    - index
+    - node_index
     regex: '0'
 """
-    assert node.yaml == expected_yaml
+    print(expected_yaml)
+    print(node.get_node_yamls()['node-0-a'])
+    assert node.get_node_yamls()['node-0-a'] == expected_yaml
+
 
 def test_prometheus_other_node_yaml():
     node = Node(
-        index=1234,
+        index=234,
         capacity=15,
+        replica_count=1,
         sd_url='prometheus-ring',
         sd_port='9988',
         scrape_interval='15s',
@@ -40,6 +47,9 @@ def test_prometheus_other_node_yaml():
     )
     expected_yaml = """global:
   scrape_interval: 15s
+  external_labels:
+    cluster: node-234
+    __replica__: a
 scrape_configs:
 - job_name: prometheus_ring_sd
   http_sd_configs:
@@ -48,15 +58,81 @@ scrape_configs:
   relabel_configs:
   - action: keep
     source_labels:
-    - index
-    regex: '1234'
+    - node_index
+    regex: '234'
 """
-    assert node.yaml == expected_yaml
+    assert node.get_node_yamls()['node-234-a'] == expected_yaml
+
+def test_prometheus_multiple_replicas():
+    node = Node(
+        index=5678,
+        capacity=15,
+        replica_count=1,
+        sd_url='prometheus-ring',
+        sd_port='9988',
+        scrape_interval='15s',
+        refresh_interval='45m',
+        port='8899', 
+    )
+    expected_yaml_a = """global:
+  scrape_interval: 15s
+  external_labels:
+    cluster: node-5678
+    __replica__: a
+scrape_configs:
+- job_name: prometheus_ring_sd
+  http_sd_configs:
+  - url: http://prometheus-ring:9988/targets
+    refresh_interval: 45m
+  relabel_configs:
+  - action: keep
+    source_labels:
+    - node_index
+    regex: '5678'
+"""
+    expected_yaml_b = """global:
+  scrape_interval: 15s
+  external_labels:
+    cluster: node-5678
+    __replica__: b
+scrape_configs:
+- job_name: prometheus_ring_sd
+  http_sd_configs:
+  - url: http://prometheus-ring:9988/targets
+    refresh_interval: 45m
+  relabel_configs:
+  - action: keep
+    source_labels:
+    - node_index
+    regex: '5678'
+"""
+
+    expected_yaml_c = """global:
+  scrape_interval: 15s
+  external_labels:
+    cluster: node-5678
+    __replica__: c
+scrape_configs:
+- job_name: prometheus_ring_sd
+  http_sd_configs:
+  - url: http://prometheus-ring:9988/targets
+    refresh_interval: 45m
+  relabel_configs:
+  - action: keep
+    source_labels:
+    - node_index
+    regex: '5678'
+"""
+    assert node.get_node_yamls()['node-5678-a'] == expected_yaml_a
+    assert node.get_node_yamls()['node-5678-b'] == expected_yaml_b
+    assert node.get_node_yamls()['node-5678-c'] == expected_yaml_c
+
 
 def test_prometheus_remote_storage_yaml():
     node = Node(
-        index=1234,
+        index=7,
         capacity=15,
+        replica_count=6,
         sd_url='prometheus-ring',
         sd_port='9988',
         scrape_interval='15s',
@@ -68,6 +144,9 @@ def test_prometheus_remote_storage_yaml():
     )
     expected_yaml = """global:
   scrape_interval: 15s
+  external_labels:
+    cluster: node-7
+    __replica__: f
 scrape_configs:
 - job_name: prometheus_ring_sd
   http_sd_configs:
@@ -76,14 +155,14 @@ scrape_configs:
   relabel_configs:
   - action: keep
     source_labels:
-    - index
-    regex: '1234'
+    - node_index
+    regex: '7'
 remote_write:
 - url: http://database:19090/api/v1/push
   headers:
     X-Scope-OrgID: demo
 """
-    assert node.yaml == expected_yaml
+    assert node.get_node_yamls()['node-7-f'] == expected_yaml
 
 def test_node_is_full():
     node = Node(index=0, capacity=1)

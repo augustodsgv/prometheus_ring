@@ -22,27 +22,28 @@ class Ring:
             node_capacity: int,
             node_min_load: int,         # Using integer for simplicity. Varies from 0 to 100 (%)
             node_max_load: int,
-            sd_url: str,
+            sd_provider: str, 
+            sd_host: str,
             sd_port: str,
             adt: AbstractDataType,
             node_replica_count: int = 1,
-            node_sd_refresh_interval: str = '1m',
+            sd_refresh_interval: str = '1m',
             node_scrape_interval: str = '1m',
             metrics_database_url: str | None = None,
             metrics_database_port: int | None = None,
             metrics_database_path: str | None = None,
         )->None:
-
         self.node_capacity = node_capacity
         self.node_min_load = node_min_load
         self.node_max_load = node_max_load
         self.node_replica_count = node_replica_count
-        self.node_sd_refresh_interval = node_sd_refresh_interval
         self.node_scrape_interval = node_scrape_interval
         self.node_count = 1
         self.ring = adt
-        self.sd_url = sd_url
+        self.sd_provider = sd_provider
+        self.sd_host = sd_host
         self.sd_port = sd_port
+        self.sd_refresh_interval = sd_refresh_interval
         self.metrics_database_url = metrics_database_url
         self.metrics_database_port = metrics_database_port
         self.metrics_database_path = metrics_database_path
@@ -52,10 +53,11 @@ class Ring:
         self.node_zero = Node(
             index=0,
             capacity=node_capacity,
-            sd_url=self.sd_url,
+            sd_provider=self.sd_provider,
+            sd_host=self.sd_host,
             sd_port=self.sd_port,
             replica_count=self.node_replica_count,
-            refresh_interval=self.node_sd_refresh_interval,
+            sd_refresh_interval=self.sd_refresh_interval,
             scrape_interval=self.node_scrape_interval,
             metrics_database_url=self.metrics_database_url,
             metrics_database_port=self.metrics_database_port,
@@ -80,7 +82,6 @@ class Ring:
             raise KeyAlreadyExistsError(f'Key {key} already exists')
         
         key_hash = stable_hash(key)
-        print(f'key hash: {key_hash}')
         node_to_insert: Node = self._find_node(key_hash)
         logger.debug(f'Inserting {target} into node {node_to_insert}')
         node_to_insert.insert(key, target)
@@ -91,7 +92,7 @@ class Ring:
             return new_node
         return None
 
-    def get(self, key: str)->Node:
+    def get(self, key: str)->Target:
         """
         Returns the target of the key. Raises an exception if not found
         """
@@ -100,6 +101,16 @@ class Ring:
         if not node_set_to_search.has_key(key):
             raise KeyNotFoundError(f'Key {key} not found')
         return node_set_to_search.get(key)
+
+    def get_target_node(self, key: str)->Node:
+        """
+        Returns the node a target belongs to
+        """
+        key_hash = stable_hash(key)
+        node_set_to_search: Node = self._find_node(key_hash)
+        if not node_set_to_search.has_key(key):
+            raise KeyNotFoundError(f'Key {key} not found')
+        return node_set_to_search
 
     def update(self, key: str, new_target: Target)->None:
         """
@@ -160,10 +171,11 @@ class Ring:
             index=node_mid_hash,
             capacity=self.node_capacity,
             replica_count=self.node_replica_count,
-            sd_url=self.sd_url,
+            sd_provider=self.sd_provider,
+            sd_host=self.sd_host,
             sd_port=self.sd_port,
             scrape_interval=self.node_scrape_interval,
-            refresh_interval=self.node_sd_refresh_interval,
+            sd_refresh_interval=self.sd_refresh_interval,
             metrics_database_url=self.metrics_database_url,
             metrics_database_port=self.metrics_database_port,
             metrics_database_path=self.metrics_database_path,
@@ -192,13 +204,3 @@ class Ring:
         self.ring.remove(index)
         logger.info(f'Node {index} removed from the ring successfully')
         return node_to_delete
-
-    # # Prometheus specific methods
-    # def set_node_not_ready(self, node_index: int)->None:
-    #     """
-    #     Sets a node as not ready to receive requests
-    #     """
-    #     node: Node = self.ring.search(node_index)
-    #     if node is None:
-    #         raise NodeNotFoundError(f'Node with index {node_index} not found')
-    #     node.ready = False

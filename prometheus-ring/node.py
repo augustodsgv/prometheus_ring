@@ -2,23 +2,28 @@ from .target import Target
 from .hash import stable_hash
 import yaml
 
+class ServiceDiscoveryDoesNotExist(Exception):
+    ...
+
 class Node:
     """
     Represents a node in the prometheus ring, i.e. a prometheus instance
     """
+    service_discovery_provider = ('prometheus_ring_sd', 'consul')
     def __init__(
             self, index: int,
             capacity: int,
-            sd_url: str | None = None,
+            sd_provider: str | None,
+            sd_host: str | None = None,
             sd_port: str | None = None,
             scrape_interval = '1m',
-            refresh_interval = '1m',
+            sd_refresh_interval = '1m',
             port: int | None = None,
             replica_count: int = 1,
             metrics_database_url: str | None = None,
             metrics_database_port: int | None = None,
             metrics_database_path: str | None = None,
-        ) -> None:
+        )-> None:
 
         self.index = index
         self.capacity = capacity
@@ -27,8 +32,11 @@ class Node:
         self.targets = dict()
         self.keys_to_delete = list()
         self.scrape_interval = scrape_interval
-        self.refresh_interval = refresh_interval
-        self.sd_url = sd_url
+        self.sd_refresh_interval = sd_refresh_interval
+        if sd_provider not in self.service_discovery_provider:
+            raise ServiceDiscoveryDoesNotExist(f'Service discovery {sd_provider} is ot mapped')
+        self.sd_provider = sd_provider
+        self.sd_host = sd_host
         self.sd_port = sd_port
         self.port = port
         self.metrics_database_url = metrics_database_url
@@ -138,35 +146,78 @@ class Node:
         """
         self.ready = False  
 
-    @property
-    def yaml(self)->str:
+    def get_node_yamls(self)->dict[str, dict]:
         """
-        Composes a prometheus.yml file that configures a prometheus node
-        and returns it's string
+        Generates a yaml file for each replica of the node
+        """
+        replicas_yamls = dict()
+        replica_possible_indexes = ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 
+                                     'w', 'x', 'y', 'z')
+        for replica_num in range(self.replica_count):
+            replica_index = replica_possible_indexes[replica_num]
+            print(f'node-{self.index}-{replica_index}')
+            replicas_yamls[f'node-{self.index}-{replica_index}'] = self._replica_yaml(replica_index)
+        return replicas_yamls
+    
+    def _replica_yaml(self, replica_index: str)->str:
+        """
+        Composes a prometheus.yml file that configures each prometheus node.
+        Each replica of the node will have a index represented by letters a, b, c, etc.
+        The replica_index is used for mimir deduplication
         """
         prometheus_yml = {
             'global': {
                 'scrape_interval': self.scrape_interval,
-                },
-            'scrape_configs':[
-                {
-                    'job_name': 'prometheus_ring_sd',
-                    'http_sd_configs': [
-                        {
-                            'url': f'http://{self.sd_url}:{self.sd_port}/targets',
-                            'refresh_interval': self.refresh_interval
-                        }
-                    ],
-                    'relabel_configs': [
-                        {
-                            'action': 'keep',
-                            'source_labels': ['node_index'],
-                            'regex': str(self.index)
-                        }
-                    ]
+                'external_labels': {
+                    'cluster': f'node-{self.index}',
+                    '__replica__': replica_index
                 }
-            ],
+                },
+            'scrape_configs':[],
         }
+        match self.sd_provider:
+            case 'prometheus_ring_sd':
+                prometheus_yml['scrape_configs'].append(
+                    {
+                        'job_name': 'prometheus_ring_sd',
+                        'http_sd_configs': [
+                            {
+                                'url': f'http://{self.sd_host}:{self.sd_port}/targets',
+                                'sd_refresh_interval': self.sd_refresh_interval
+                            }
+                        ],
+                        'relabel_configs': [
+                            {
+                                'action': 'keep',
+                                'source_labels': ['node_index'],
+                                'regex': str(self.index)
+                            }
+                        ]
+                    }
+                )
+            case 'consul':
+                prometheus_yml['scrape_configs'].append(
+                    {
+                        'job_name': 'prometheus_ring_sd',
+                        'consul_sd_configs': [
+                            {
+                                'server': f'http://{self.sd_host}:{self.sd_port}'
+                                # 'filter': [
+                                #     {
+                                #         'ServiceTags': [str(self.index)]
+                                #     }
+                                # ]
+                            }
+                        ],
+                        'relabel_configs': [
+                            {
+                                'action': 'keep',
+                                'source_labels': ['__meta_consul_tags'],
+                                'regex': f'.*ring-node-{str(self.index)}.*'
+                            }
+                        ]
+                    }
+                )
         # TODO: maybe this X-Scope-OrgID should be the cloud region
         if self.metrics_database_url is not None:
             prometheus_yml['remote_write'] = [

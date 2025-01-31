@@ -1,3 +1,4 @@
-docker run -it \
-    -e PROMETHEUS_YML=Z2xvYmFsOgogICBzY3JhcGVfaW50ZXJ2YWw6ICI1cyIKc2NyYXBlX2NvbmZpZ3M6CiAgIC0gam9iX25hbWU6ICJjb25zdWxfc2VydmljZV9kaXNjb3ZlcnkiCiAgICAgY29uc3VsX3NkX2NvbmZpZ3M6CiAgICAgICAgLSBzZXJ2ZXI6ICdjb25zdWwtc2VydmVyOjg1MDAnCiAgICAgcmVsYWJlbF9jb25maWdzOgogICAgICAgICAtIGFjdGlvbjoga2VlcAogICAgICAgICAgIHNvdXJjZV9sYWJlbHM6IFtfX21ldGFfY29uc3VsX3NlcnZpY2VdCiAgICAgICAgICAgcmVnZXg6IHN5bnRoZXRpYy4q \
-    prometheus_ring
+prometheus_yml_base64=$(base64 -w 0 prometheus.yml)
+echo $prometheus_yml_base64
+docker volume create prometheus-node-test
+docker run -v prometheus-node-test:/agent  -p 9090:9090 -e PROMETHEUS_YML=$prometheus_yml_base64 prometheus-ring-node
