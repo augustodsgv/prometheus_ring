@@ -14,11 +14,11 @@ class Node:
             self, index: int,
             capacity: int,
             sd_provider: str | None,
+            port: int | None = None,                # For now ports has no use in docker swarm
             sd_host: str | None = None,
             sd_port: str | None = None,
             scrape_interval = '1m',
             sd_refresh_interval = '1m',
-            port: int | None = None,
             replica_count: int = 1,
             metrics_database_url: str | None = None,
             metrics_database_port: int | None = None,
@@ -28,7 +28,7 @@ class Node:
         self.index = index
         self.capacity = capacity
         self.replica_count = replica_count
-        self.ready = False
+        self.ready = False                          # This will need an integration with orquestrator health checks
         self.targets = dict()
         self.keys_to_delete = list()
         self.scrape_interval = scrape_interval
@@ -145,24 +145,11 @@ class Node:
         Define the node as not ready
         """
         self.ready = False  
-
-    def get_node_yamls(self)->dict[str, dict]:
-        """
-        Generates a yaml file for each replica of the node
-        """
-        replicas_yamls = dict()
-        replica_possible_indexes = ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 
-                                     'w', 'x', 'y', 'z')
-        for replica_num in range(self.replica_count):
-            replica_index = replica_possible_indexes[replica_num]
-            print(f'node-{self.index}-{replica_index}')
-            replicas_yamls[f'node-{self.index}-{replica_index}'] = self._replica_yaml(replica_index)
-        return replicas_yamls
     
-    def _replica_yaml(self, replica_index: str)->str:
+    @property
+    def yaml(self)->str:
         """
         Composes a prometheus.yml file that configures each prometheus node.
-        Each replica of the node will have a index represented by letters a, b, c, etc.
         The replica_index is used for mimir deduplication
         """
         prometheus_yml = {
@@ -170,7 +157,7 @@ class Node:
                 'scrape_interval': self.scrape_interval,
                 'external_labels': {
                     'cluster': f'node-{self.index}',
-                    '__replica__': replica_index
+                    '__replica__': '{HOSTNAME}'           # Uses special prometheus-ring-node environment variable
                 }
                 },
             'scrape_configs':[],
@@ -202,11 +189,6 @@ class Node:
                         'consul_sd_configs': [
                             {
                                 'server': f'http://{self.sd_host}:{self.sd_port}'
-                                # 'filter': [
-                                #     {
-                                #         'ServiceTags': [str(self.index)]
-                                #     }
-                                # ]
                             }
                         ],
                         'relabel_configs': [
@@ -224,7 +206,7 @@ class Node:
                 {
                     'url': f'http://{self.metrics_database_url}:{self.metrics_database_port}{self.metrics_database_path}',
                     'headers': {
-                        'X-Scope-OrgID': 'demo'
+                        'X-Scope-OrgID': 'cloud-mock'
                     }
                 }
             ]

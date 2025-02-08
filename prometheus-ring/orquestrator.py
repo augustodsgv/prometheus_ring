@@ -30,7 +30,6 @@ class Orquestrator:
             docker_networks: list[str] | str | None = None,
             environment: dict | None = None,
         )->None:
-        print(node.replica_count)
         """
         Instanciates a prometheus docker container and it's replicas
         """
@@ -38,11 +37,11 @@ class Orquestrator:
             environment = dict()
         self.containers[node.index] = []
 
-        for replica_name, replica_yaml in node.get_node_yamls().items():
+        environment['PROMETHEUS_YML'] = node.yaml
+        for i in range(node.replica_count):
             self.curr_port += 1         # Gambiarra só pra criar portas não alocadas para container
-            environment['PROMETHEUS_YML'] = base64.b64encode(replica_yaml.encode('utf-8'))
             container = self.client.containers.run(
-                name=replica_name,
+                name=f'prometheus-{node.index}-{i}',
                 image=self.prometheus_docker_image,
                 network=self.api_network,
                 environment=environment,
