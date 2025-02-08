@@ -1,11 +1,6 @@
 #!/bin/sh
-# Writing PROMETHEUS_YML environment var to the file
-if [ -z "$PROMETHEUS_YML" ]; then
-    echo "PROMETHEUS_YML environment variable is not set"
+/usr/bin/env_to_yml
+if [ $? -eq 1 ]; then
     exit 1
 fi
-echo "Using the following prometheus.yml configuration:"
-echo $PROMETHEUS_YML | base64 -d
-echo $PROMETHEUS_YML | base64 -d > /etc/prometheus/prometheus.yml
-
 exec /bin/prometheus "$@"
