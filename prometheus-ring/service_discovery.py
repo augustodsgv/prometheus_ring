@@ -33,4 +33,4 @@ class ServiceDiscovery:
         if response.status_code != 200:
             logger.error(f'Error deregistering target {target.id} in consul: {response.content}')
         else:
-            logger.info(f'Target {target.id} deregitered from consul')
+            logger.info(f'Target {target.id} deregistered from consul')

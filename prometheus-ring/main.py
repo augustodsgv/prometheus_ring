@@ -2,89 +2,44 @@ from .adt.binary_search_tree import BinarySearchTree
 from .target import Target
 from .service_discovery import ServiceDiscovery
 from .ring import Ring, KeyNotFoundError, KeyAlreadyExistsError
-from .orquestrator import Orquestrator
+from .swarm_orquestrator import SwarmOrquestrator
 from .api import API
+from .settings import Settings
 import logging
+import logging.config
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
-import os
+import uvicorn
 
-API_DOCKER_NETWORK = os.environ.get('API_DOCKER_NETWORK', "ring-api-network")
-DOCKER_PROMETHEUS_IMAGE = os.environ.get('DOCKER_PROMETHEUS_IMAGE', "prometheus-ring-node")
 
-API_ENDPOINT = os.environ.get('API_ENDPOINT', "prometheus-ring-api")
-API_PORT = int(os.environ.get('API_PORT', 9988)
-)
-NODE_CAPACITY=int(os.environ.get('NODE_CAPACITY', '2'))
-NODE_MIN_LOAD=int(os.environ.get('NODE_MIN_LOAD', '25'))
-NODE_MAX_LOAD=int(os.environ.get('NODE_MAX_LOAD', '75'))
-NODE_REPLICATION_NUM=int(os.environ.get('NODE_REPLICATION_NUM', 1))
-NODE_SCRAPE_INTERVAL=os.environ.get('NODE_SCRAPE_INTERVAL', '1m')
-SD_REFRESH_INTERVAL=os.environ.get('SD_REFRESH_INTERVAL', '1m')
-SD_PROVIDER=os.environ.get('SD_PROVIDER', 'consul')
-SD_PORT=os.environ.get('SD_PORT', 8500)
-SD_HOST=os.environ.get('SD_HOST', 'consul')
-METRICS_DATABASE_URL=os.environ.get('METRICS_DATABASE_URL', None)
-METRICS_DATABASE_PORT=os.environ.get('METRICS_DATABASE_PORT', None)
-METRICS_DATABASE_PATH=os.environ.get('METRICS_DATABASE_PATH', None)
-LOG_LEVEL = os.environ.get('LOG_LEVEL', "INFO").upper()
-LOGGING_CONFIG = {
-    "version": 1,
-    "disable_existing_loggers": True,
-    "formatters": {
-        "standard": {"format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s"},
-    },
-    "handlers": {
-        "default": {
-            "level": "INFO",
-            "formatter": "standard",
-            "class": "logging.StreamHandler",
-            "stream": "ext://sys.stdout",  # Default is stderr
-        }
-    },
-    "loggers": {
-        "": {  # root logger
-            "level": LOG_LEVEL,
-            "handlers": ["default"],
-            "propagate": False,
-        },
-        "uvicorn.error": {
-            "level": "DEBUG",
-            "handlers": ["default"],
-        },
-        "uvicorn.access": {
-            "level": "DEBUG",
-            "handlers": ["default"],
-        },
-    },
-}
-
-logging.config.dictConfig(LOGGING_CONFIG)
+settings = Settings()
+logging.config.dictConfig(settings.logging_config)
 logger = logging.getLogger(__name__)
 
 bst = BinarySearchTree()
 ring = Ring(
-    node_capacity=NODE_CAPACITY,
-    node_min_load=NODE_MIN_LOAD,
-    node_max_load=NODE_MAX_LOAD,
-    node_replica_count=NODE_REPLICATION_NUM,
-    sd_provider=SD_PROVIDER,
-    sd_host=SD_HOST,
-    sd_port=SD_PORT,
-    node_scrape_interval=NODE_SCRAPE_INTERVAL,
-    sd_refresh_interval=SD_REFRESH_INTERVAL,
+    node_capacity=settings.node_capacity,
+    node_min_load=settings.node_min_load,
+    node_max_load=settings.node_max_load,
+    node_replica_count=settings.node_replication_num,
+    sd_provider=settings.sd_provider,
+    sd_host=settings.sd_host,
+    sd_port=settings.sd_port,
+    node_scrape_interval=settings.node_scrape_interval,
+    sd_refresh_interval=settings.sd_refresh_interval,
     adt=bst,
-    metrics_database_url=METRICS_DATABASE_URL,
-    metrics_database_port=METRICS_DATABASE_PORT,
-    metrics_database_path=METRICS_DATABASE_PATH
+    metrics_database_url=settings.metrics_database_url,
+    metrics_database_port=settings.metrics_database_port,
+    metrics_database_path=settings.metrics_database_path
 )
 
-docker_orquestrator = Orquestrator(DOCKER_PROMETHEUS_IMAGE, API_DOCKER_NETWORK)
-service_discovery = ServiceDiscovery(SD_HOST, SD_PORT)
-api = API(ring, docker_orquestrator, service_discovery)
-# The first node has to be created manually
-first_node = ring.node_zero
-docker_orquestrator.create_instance(first_node)
+
+orquestrator = SwarmOrquestrator(settings.docker_prometheus_image, settings.docker_network)
+service_discovery = ServiceDiscovery(settings.sd_host, settings.sd_port)
+api = API(ring, orquestrator, service_discovery)
+
+first_node = ring.node_zero             # The first node has to be created manually
+orquestrator.create_node(first_node)
 
 app = FastAPI()
 
@@ -99,7 +54,6 @@ async def register_target(target: Target):
 @app.delete("/unregister-target")
 async def unregister_target(target_id: str):
     try:
-        # logger.debug(api.ring._find_node(stable_hash(target_id)))
         api.unregister_target(target_id)
         return {"message": "Target unregistered successfully!"}
     except KeyNotFoundError as e:
@@ -107,14 +61,8 @@ async def unregister_target(target_id: str):
 
 @app.get("/targets")
 async def get_targets():
-    from .hash import stable_hash
     targets = api.build_targets_json()
-    nodes = api.ring.get_nodes()
-    for node in nodes:
-        logger.debug(f'node: {node}')
-        for target in node.list_items():
-            logger.debug(f'target: {target} hash {stable_hash(target.id)}')
-        logger.debug(f'targets {targets}')
-        
-    logger.debug(f'targets {targets}')
     return JSONResponse(content=targets)
+
+if __name__ == '__main__':
+    uvicorn.run(app, log_config=settings.logging_config, port=9988, host='0.0.0.0')

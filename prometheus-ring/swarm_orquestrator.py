@@ -17,11 +17,12 @@ class SwarmOrquestrator:
     def __init__(
             self,
             prometheus_docker_image: str = 'prom/prometheus',
-            docker_url: str = 'unix://var/run/docker.sock'
+            docker_network: str = 'prometheus-ring',
+            docker_url: str = 'unix://var/run/docker.sock',
         )->None:
 
         self.client = docker.DockerClient(base_url=docker_url)
-
+        self.docker_network = docker_network
         self.prometheus_docker_image = prometheus_docker_image
         self.docker_url = docker_url
         self.services :dict[str, Service]= dict()        # Keeps track of each node's service
@@ -46,6 +47,7 @@ class SwarmOrquestrator:
             env=service_envs,
             name=f'prometheus-{node.index}',
             endpoint_spec=endpoint_spec,
+            networks=[self.docker_network]
             # stop_grace_period= '1m',                                                    # Grace period for stopping the service
         )
         self.services[node.index] = service
@@ -86,8 +88,13 @@ class SwarmOrquestrator:
         """
         Deletes a prometheus docker container
         """
+        print(f'Deleting node {node} from swarm')
+        logger.debug(f'Deleting node {node} from swarm')
         node_service = self.services.get(node.index)
-        node_service.remove()
+        result = node_service.remove()
+        print(f'Result: {result}')
+        logger.debug(f'Result: {result}')
+
 
     def check_health_node(self, node: Node)->None:
         """
@@ -98,8 +105,14 @@ class SwarmOrquestrator:
         # TODO: implement heatlh check
 
 if __name__ == '__main__':
-    node = Node(0, 100, 'consul', 9090, 'consul', '8500', '1m', '1m', 3)
+    node1 = Node(0, 100, 'consul', 9090, 'consul', '8500', '1m', '1m', 3)
+    node2 = Node(1, 100, 'consul', 9091, 'consul', '8501', '1m', '1m', 3)
+    node3 = Node(2, 100, 'consul', 9092, 'consul', '8502', '1m', '1m', 3)
     orquestrator = SwarmOrquestrator('prometheus-ring-node')
-    orquestrator.create_node(node)
+    orquestrator.create_node(node1)
+    orquestrator.create_node(node2)
+    orquestrator.create_node(node3)
     input()
-    orquestrator.delete_node(node)
+    orquestrator.delete_node(node1)
+    orquestrator.delete_node(node2)
+    orquestrator.delete_node(node3)
