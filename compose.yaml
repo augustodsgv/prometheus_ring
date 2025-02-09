@@ -66,7 +66,7 @@ services:
     environment:
     - DOCKER_NETWORK=prometheus-ring_default
     
-    - DOCKER_PROMETHEUS_IMAGE=prometheus-ring-node
+    - DOCKER_PROMETHEUS_IMAGE=augustodsgv/prometheus-ring-node
     - API_ENDPOINT=operator
     - API_PORT=9988
     - NODE_CAPACITY=4
