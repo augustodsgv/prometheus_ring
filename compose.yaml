@@ -1,54 +1,39 @@
 services:
-  prometheus-ring-api:
-    build: .
-    # environment:
-    # -     
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - prometheus-ring
-    ports:
-      - "9988:9988"
+  cloud-metrics-generator-1:
+    image: augustodsgv/cloud_metrics_generator
     environment:
-    - API_DOCKER_NETWORK=prometheus-ring
-    - DOCKER_PROMETHEUS_IMAGE=prometheus-ring-node
-    - API_ENDPOINT=prometheus-ring-api
-    - API_PORT=9988
-    - NODE_CAPACITY=4
-    - NODE_REPLICATION_NUM=3
-    - NODE_MIN_LOAD=25
-    - NODE_MAX_LOAD=75
-    - NODE_SCRAPE_INTERVAL=5s
+      - INSTANCE_ID=123
+      - TENANT_ID=4321
+      - INSTANCE_REGION=us-west-2
+      - INSTANCE_TYPE=K8SAAS
+      - SCRAPE_INTERVAL=5
+    # networks:
+    #   - prometheus-ring
+    deploy:
+      mode: replicated
+      replicas: 3
 
-    - SD_PROVIDER=consul
-    - SD_PORT=8500
-    - SD_HOST=consul
-
-    - LOG_LEVEL=WARNING
-    - METRICS_DATABASE_URL=load-balancer
-    - METRICS_DATABASE_PORT=9009
-    - METRICS_DATABASE_PATH=/api/v1/push
-
-  minio:
-    image: minio/minio
-    entrypoint: [""]
-    command: ["sh", "-c", "mkdir -p /data/mimir && minio server --quiet /data"]
+  cloud-metrics-generator-2:
+    image: augustodsgv/cloud_metrics_generator
     environment:
-      - MINIO_ROOT_USER=mimir
-      - MINIO_ROOT_PASSWORD=supersecret
-    volumes:
-      - minio-data:/data
-    ports:
-      - "9123:9000"
-    networks:
-      - prometheus-ring
+      - INSTANCE_ID=1234
+      - TENANT_ID=4321
+      - INSTANCE_REGION=us-west-2
+      - INSTANCE_TYPE=K8SAAS
+      - SCRAPE_INTERVAL=5
+    # networks:
+    #   - prometheus-ring
 
-  consul:
-    image: hashicorp/consul
-    ports:
-      - "8500:8500"
-    networks:
-      - prometheus-ring
+  cloud-metrics-generator-3:
+    image: augustodsgv/cloud_metrics_generator
+    environment:
+      - INSTANCE_ID=19283
+      - TENANT_ID=4321
+      - INSTANCE_REGION=us-west-2
+      - INSTANCE_TYPE=K8SAAS
+      - SCRAPE_INTERVAL=5
+    # networks:
+    #   - prometheus-ring
 
   grafana:
     image: grafana/grafana:latest
@@ -64,25 +49,46 @@ services:
       - ./mimir/grafana-provisioning-datasources.yaml:/etc/grafana/provisioning/datasources/provisioning-datasources.yaml:ro
     ports:
       - 9000:3000
-    networks:
-      - prometheus-ring
+    # networks:
+    #   - prometheus-ring
 
-  cloud-metrics-generator:
-    image: augustodsgv/cloud_metrics_generator
+  operator:
+    image: augustodsgv/prometheus-ring
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    # networks:
+    #   - prometheus-ring
+    ports:
+      - "9988:9988"
+    depends_on:
+      - consul
+      - load-balancer
     environment:
-      - INSTANCE_ID=1234
-      - TENANT_ID=4321
-      - INSTANCE_REGION=us-west-2
-      - INSTANCE_TYPE=K8SAAS
-      - SCRAPE_INTERVAL=5
-    # ports:
-    #   - "8000:8000"
-    pull_policy: always
-    networks:
-      - prometheus-ring
+    - DOCKER_NETWORK=prometheus-ring_default
+    
+    - DOCKER_PROMETHEUS_IMAGE=prometheus-ring-node
+    - API_ENDPOINT=operator
+    - API_PORT=9988
+    - NODE_CAPACITY=4
+    - NODE_REPLICATION_NUM=3
+    - NODE_MIN_LOAD=25
+    - NODE_MAX_LOAD=75
+    - NODE_SCRAPE_INTERVAL=5s
+
+    - SD_PROVIDER=consul
+    - SD_PORT=8500
+    - SD_HOST=consul
+
+    - LOG_LEVEL=DEBUG
+    - METRICS_DATABASE_URL=load-balancer
+    - METRICS_DATABASE_PORT=9009
+    - METRICS_DATABASE_PATH=/api/v1/push
     deploy:
       mode: replicated
-      replicas: 3
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
 
   load-balancer:
     image: nginx:latest
@@ -94,48 +100,72 @@ services:
       - "mimir-3"
     ports:
       - "9009:9009"
-    networks:
-      - prometheus-ring
+    # networks:
+    #   - prometheus-ring
 
   mimir-1:
-    image: grafana/mimir:latest
-    command: ["-config.file=/etc/mimir.yaml"]
+    image: augustodsgv/custom-mimir
+    # entrypoint: ["sh", "/etc/mimir-entrypoint.sh"]
     hostname: mimir-1
     depends_on:
       - minio
+      - consul
     volumes:
-      - ./mimir/mimir.yaml:/etc/mimir.yaml:ro
+      - ./mimir/mimir-template.yaml:/etc/mimir-template.yaml:ro
+      # - ./mimir/mimir.yaml:/etc/mimir.yaml:ro
       - ./mimir/alertmanager.yaml:/etc/alertmanager-fallback-config.yaml:ro
       - mimir-1-data:/data
-    networks:
-      - prometheus-ring
+    # networks:
+    #   - prometheus-ring
 
   mimir-2:
-    image: grafana/mimir:latest
-    command: ["-config.file=/etc/mimir.yaml"]
+    image: augustodsgv/custom-mimir
+    # entrypoint: ["sh", "/etc/mimir-entrypoint.sh"]
     hostname: mimir-2
     depends_on:
       - minio
+      - consul
     volumes:
-      - ./mimir/mimir.yaml:/etc/mimir.yaml:ro
+      - ./mimir/mimir-template.yaml:/etc/mimir-template.yaml:ro
+      # - ./mimir/mimir.yaml:/etc/mimir.yaml:ro
       - ./mimir/alertmanager.yaml:/etc/alertmanager-fallback-config.yaml:ro
       - mimir-2-data:/data
-    networks:
-      - prometheus-ring
+    # networks:
+    #   - prometheus-ring
 
   mimir-3:
-    image: grafana/mimir:latest
-    command: ["-config.file=/etc/mimir.yaml"]
+    image: augustodsgv/custom-mimir
+    # entrypoint: ["sh", "/etc/mimir-entrypoint.sh"]
     hostname: mimir-3
     depends_on:
       - minio
+      - consul
     volumes:
-      - ./mimir/mimir.yaml:/etc/mimir.yaml
+      - ./mimir/mimir-template.yaml:/etc/mimir-template.yaml:ro
+      # - ./mimir/mimir.yaml:/etc/mimir.yaml:ro
       - ./mimir/alertmanager.yaml:/etc/alertmanager-fallback-config.yaml
       - mimir-3-data:/data
-    networks:
-      - prometheus-ring
+    # networks:
+    #   - prometheus-ring
 
+  minio:
+    image: minio/minio
+    entrypoint: [""]
+    command: ["sh", "-c", "mkdir -p /data/mimir && minio server --quiet /data"]
+    environment:
+      - MINIO_ROOT_USER=mimir
+      - MINIO_ROOT_PASSWORD=supersecret
+    volumes:
+      - minio-data:/data
+    # networks:
+    #   - prometheus-ring
+
+  consul:
+    image: hashicorp/consul
+    ports:
+      - "8500:8500"
+    # networks:
+    #   - prometheus-ring
 
 volumes:
   mimir-1-data:
@@ -143,8 +173,6 @@ volumes:
   mimir-3-data:
   minio-data:
 
-networks:
-  # prometheus-ring-api-network:
-  #   external: true
-  prometheus-ring:
-    external: true
+# networks:
+#   prometheus-ring:
+#     name:  prometheus-ring
