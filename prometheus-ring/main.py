@@ -5,6 +5,7 @@ from .ring import Ring, KeyNotFoundError, KeyAlreadyExistsError
 from .swarm_orquestrator import SwarmOrquestrator
 from .api import API
 from .settings import Settings
+from .log_config import LogConfig
 import logging
 import logging.config
 from fastapi import FastAPI, HTTPException
@@ -13,7 +14,8 @@ import uvicorn
 
 
 settings = Settings()
-logging.config.dictConfig(settings.logging_config)
+log_configs = LogConfig(settings.log_level)
+logging.config.dictConfig(log_configs.get_logging_config())
 logger = logging.getLogger(__name__)
 
 bst = BinarySearchTree()
