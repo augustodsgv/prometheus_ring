@@ -12,7 +12,7 @@ datasources:
       httpHeaderName1: "X-Scope-OrgID"
       alertmanagerUid: "alertmanager"
     secureJsonData:
-      httpHeaderValue1: "demo"
+      httpHeaderValue1: "cloud-mock"
     isDefault: true
     
   - name: Mimir Alertmanager
@@ -20,6 +20,7 @@ datasources:
     type: alertmanager
     access: proxy
     orgId: 1
+    # url: http://mimir:8080/
     url: http://load-balancer:9009/
     version: 1
     editable: true
@@ -27,4 +28,4 @@ datasources:
       httpHeaderName1: "X-Scope-OrgID"
       implementation: "cortex"
     secureJsonData:
-      httpHeaderValue1: "demo"
+      httpHeaderValue1: "cloud-mock"

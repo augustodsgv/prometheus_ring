@@ -20,17 +20,17 @@ blocks_storage:
   tsdb:
     dir: /data/ingester
 
-# Use memberlist, a gossip-based protocol, to enable the 3 Mimir replicas to communicate
 memberlist:
-  join_members: [mimir-1, mimir-2, mimir-3]
+  join_members: [tasks.mimir]
+  # join_members: [mimir-1, mimir-2, mimir-3]
 
 ruler:
   rule_path: /data/ruler
   alertmanager_url: http://127.0.0.1:8080/alertmanager
   ring:
     # Quickly detect unhealthy rulers to speed up the tutorial.
-    heartbeat_period: 2s
-    heartbeat_timeout: 10s
+    heartbeat_period: 30m
+    heartbeat_timeout: 1m
 
 alertmanager:
   data_dir: /data/alertmanager
@@ -38,7 +38,7 @@ alertmanager:
   external_url: http://localhost:9009/alertmanager
 
 server:
-  log_level: warn
+  log_level: debug
 
 limits:
   accept_ha_samples: true

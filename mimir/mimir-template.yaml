@@ -20,9 +20,9 @@ blocks_storage:
   tsdb:
     dir: /data/ingester
 
-# Use memberlist, a gossip-based protocol, to enable the 3 Mimir replicas to communicate
 memberlist:
-  join_members: [mimir-1, mimir-2, mimir-3]
+  # join_members: ["mimir-1", "mimir-2", "mimir-3"]
+  join_members: [tasks.mimir]
   randomize_node_name: false
   advertise_addr: ADVERTISE_ADDR_REPLACE
 
@@ -37,7 +37,8 @@ ruler:
 alertmanager:
   data_dir: /data/alertmanager
   fallback_config_file: /etc/alertmanager-fallback-config.yaml
-  external_url: http://localhost:9009/alertmanager
+  # external_url: http://localhost:9009/alertmanager
+  external_url: http://localhost:8080/alertmanager
 
 server:
   log_level: debug
