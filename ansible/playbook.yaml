@@ -1,0 +1,37 @@
+---
+- hosts: all
+  become: true
+  roles:
+    - docker_install
+
+- hosts: managers[0]
+  roles:
+    - swarm_init
+
+- hosts: managers[0]
+  gather_facts: false
+  tasks:
+    - name: get join command for workers
+      shell: 'docker swarm join-token worker | grep join'
+      register: worker_join_command_raw
+
+    - name: set worker join command
+      set_fact:
+        worker_join_command: '{{ worker_join_command_raw.stdout_lines[0] }}'
+
+    - name: get join command for managers
+      shell: 'docker swarm join-token manager | grep join'
+      register: manager_join_command_raw
+
+    - name: set manager join command
+      set_fact:
+        manager_join_command: '{{ manager_join_command_raw.stdout_lines[0] }}'
+
+
+- hosts: managers[1:]
+  roles:
+    - swarm_join_manager
+
+- hosts: workers
+  roles:
+    - swarm_join_worker

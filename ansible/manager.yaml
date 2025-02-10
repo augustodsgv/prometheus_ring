@@ -1,0 +1,33 @@
+# Configures the manager node
+- hosts: managers[0]
+  tasks:
+    - name: Initialize the cluster using docker swarm
+      docker_swarm:
+        state: present
+        # advertise_addr: "{{ hostvars[groups['manager'][0]]['ansible_default_ipv4']['address'] }}"
+        advertise_addr: "{{ ansible_host }}"
+
+- hosts: managers[0]
+  gather_facts: false
+  tasks:
+    - name: get join command for workers
+      shell: 'docker swarm join-token worker | grep join'
+      register: worker_join_command_raw
+
+    - name: set worker join command
+      set_fact:
+        worker_join_command: '{{ worker_join_command_raw.stdout_lines[0] }}'
+
+    - name: get join command for managers
+      shell: 'docker swarm join-token manager | grep join'
+      register: manager_join_command_raw
+
+    - name: set manager join command
+      set_fact:
+        manager_join_command: '{{ manager_join_command_raw.stdout_lines[0] }}'
+
+# Join other managers
+- hosts: managers[1:] # All managers *except* the first one
+  tasks:
+    - name: join cluster as manager
+      shell: "{{ hostvars[groups['managers'][0]].manager_join_command }}"
