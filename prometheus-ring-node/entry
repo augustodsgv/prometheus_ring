@@ -3,5 +3,5 @@
 if [ $? -eq 1 ]; then
     exit 1
 fi
-cat /etc/prometheus/prometheus.yml
+echo "$@"
 exec /bin/prometheus "$@"
