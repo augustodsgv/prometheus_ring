@@ -25,5 +25,5 @@ deploy:
 	docker stack deploy --compose-file compose.yaml prometheus-ring
 
 destroy:
-	docker service ls  | grep prometheus-ring-node | awk '{print $1}' | while read -r service; do docker service rm $service; done
+	docker service ls  | grep prometheus-ring-node | awk '{print $1}' | while read -r service; do docker service rm "$$service"; done
 	docker stack rm prometheus-ring
