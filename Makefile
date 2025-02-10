@@ -1,5 +1,5 @@
 help:
-	@echo "make [build|deploy|destoy]"
+	@echo "make [build|deploy|destroy]"
 
 build:
 	build-ring
@@ -24,6 +24,6 @@ build-mimir:
 deploy:
 	docker stack deploy --compose-file compose.yaml prometheus-ring
 
-destoy:
+destroy:
 	docker service ls  | grep prometheus-ring-node | awk '{print $1}' | while read -r service; do docker service rm $service; done
 	docker stack rm prometheus-ring
