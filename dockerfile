@@ -6,8 +6,8 @@ COPY requirements.txt /app/
 
 RUN pip install -r requirements.txt
 
-COPY . /app
+COPY ./prometheus-ring ./prometheus-ring
 
 EXPOSE 9988
 
-CMD ["uvicorn", "--host", "0.0.0.0", "--port", "9988", "--log-level", "debug", "prometheus_ring.main:app"]
+CMD ["uvicorn", "--host", "0.0.0.0", "--port", "9988",  "prometheus-ring.main:app"]
