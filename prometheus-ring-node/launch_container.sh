@@ -1,4 +1,9 @@
-prometheus_yml_base64=$(base64 -w 0 prometheus.yml)
-echo $prometheus_yml_base64
-docker volume create prometheus-node-test
-docker run -v prometheus-node-test:/agent  -p 9090:9090 -e PROMETHEUS_YML=$prometheus_yml_base64 prometheus-ring-node
+docker run \
+    -p 9090:9090 \
+    -e PROMETHEUS_YML="$(cat prometheus.yml)" \
+    augustodsgv/prometheus-ring-node \
+    --storage.agent.path=/prometheus/agent \
+    --config.file=/etc/prometheus/prometheus.yml \
+    --agent
+    # --web.console.templates=/usr/share/prometheus/consoles \
+    # --web.console.libraries=/usr/share/prometheus/console_libraries \

@@ -40,11 +40,11 @@ func main() {
 
 	// Output the result
 	fmt.Println(string(prometheus_str))
-	// err = os.WriteFile(outputFile, prometheus_str, 0644)
-	// if err != nil {
-	// 	fmt.Printf("Error writing to file: %v\n", err)
-	// 	os.Exit(1)
-	// }
+	err = os.WriteFile(outputFile, prometheus_str, 0644)
+	if err != nil {
+		fmt.Printf("Error writing to file: %v\n", err)
+		os.Exit(1)
+	}
 }
 
 

@@ -20,8 +20,3 @@ COPY --from=builder /app/env_to_yml /usr/bin/env_to_yml
 ADD entry /
 
 ENTRYPOINT ["/entry"]
-CMD ["--config.file=/etc/prometheus/prometheus.yml", \
-    "--storage.agent.path=/prometheus", \
-    "--web.console.libraries=/usr/share/prometheus/console_libraries", \
-    "--web.console.templates=/usr/share/prometheus/consoles", \
-    "--enable-feature=agent"]
