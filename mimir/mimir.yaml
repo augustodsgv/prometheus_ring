@@ -45,7 +45,6 @@ limits:
   max_global_series_per_user: 0
   max_global_series_per_metric: 0
 
-
 distributor:
   ha_tracker:
     enable_ha_tracker: true
