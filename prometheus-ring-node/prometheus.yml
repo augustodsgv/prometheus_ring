@@ -15,4 +15,4 @@ scrape_configs:
 remote_write:
 - url: http://load-balancer:9009/api/v1/push
   headers:
-    X-Scope-OrgID: demo
+    X-Scope-OrgID: prometheus-ring

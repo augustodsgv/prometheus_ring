@@ -200,13 +200,12 @@ class Node:
                         ]
                     }
                 )
-        # TODO: maybe this X-Scope-OrgID should be the cloud region
         if self.metrics_database_url is not None:
             prometheus_yml['remote_write'] = [
                 {
                     'url': f'http://{self.metrics_database_url}:{self.metrics_database_port}{self.metrics_database_path}',
                     'headers': {
-                        'X-Scope-OrgID': 'cloud-mock'
+                        'X-Scope-OrgID': 'prometheus-ring'
                     }
                 }
             ]

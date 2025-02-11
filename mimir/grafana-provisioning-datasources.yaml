@@ -12,7 +12,7 @@ datasources:
       httpHeaderName1: "X-Scope-OrgID"
       alertmanagerUid: "alertmanager"
     secureJsonData:
-      httpHeaderValue1: "demo"
+      httpHeaderValue1: "prometheus-ring"
     isDefault: true
     
   - name: Mimir Alertmanager
@@ -27,4 +27,4 @@ datasources:
       httpHeaderName1: "X-Scope-OrgID"
       implementation: "cortex"
     secureJsonData:
-      httpHeaderValue1: "demo"
+      httpHeaderValue1: "prometheus-ring"
