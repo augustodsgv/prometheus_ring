@@ -95,11 +95,11 @@ services:
       - "8500:8500"
     environment:
       CONSUL_LOCAL_CONFIG: |
-      {
-        "limits": {
-          "http_max_conns_per_client": 100000
+        {
+          "limits": {
+            "http_max_conns_per_client": 100000
+          }
         }
-      }
 
 volumes:
   mimir-1-data:
