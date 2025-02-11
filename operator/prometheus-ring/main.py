@@ -28,6 +28,7 @@ ring = Ring(
     sd_host=settings.sd_host,
     sd_port=settings.sd_port,
     node_scrape_interval=settings.node_scrape_interval,
+    node_scrape_timeout=settings.node_scrape_timeout,
     sd_refresh_interval=settings.sd_refresh_interval,
     adt=bst,
     metrics_database_url=settings.metrics_database_url,

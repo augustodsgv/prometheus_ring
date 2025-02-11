@@ -31,6 +31,7 @@ class Ring:
             node_base_ports: int = 19090,       # First port that a node will pick. Next nodes will have incremental ports
             sd_refresh_interval: str = '1m',
             node_scrape_interval: str = '1m',
+            node_scrape_timeout: str = '20s',
             metrics_database_url: str | None = None,
             metrics_database_port: int | None = None,
             metrics_database_path: str | None = None,
@@ -41,6 +42,7 @@ class Ring:
         self.node_replica_count = node_replica_count
         self.node_base_ports = node_base_ports
         self.node_scrape_interval = node_scrape_interval
+        self.node_scrape_timeout = node_scrape_timeout
         self.node_count = 0
         self.sd_provider = sd_provider
         self.sd_host = sd_host
@@ -65,6 +67,7 @@ class Ring:
             replica_count=self.node_replica_count,
             sd_refresh_interval=self.sd_refresh_interval,
             scrape_interval=self.node_scrape_interval,
+            scrape_timeout=self.node_scrape_timeout,
             metrics_database_url=self.metrics_database_url,
             metrics_database_port=self.metrics_database_port,
             metrics_database_path=self.metrics_database_path,
@@ -185,6 +188,7 @@ class Ring:
             sd_host=self.sd_host,
             sd_port=self.sd_port,
             scrape_interval=self.node_scrape_interval,
+            scrape_timeout=self.node_scrape_timeout,
             sd_refresh_interval=self.sd_refresh_interval,
             metrics_database_url=self.metrics_database_url,
             metrics_database_port=self.metrics_database_port,

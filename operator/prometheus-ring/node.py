@@ -1,8 +1,14 @@
 from .target import Target
 from .hash import stable_hash
 import yaml
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ServiceDiscoveryDoesNotExist(Exception):
+    ...
+
+class InvalidScrapeConfigError(Exception):
     ...
 
 class Node:
@@ -18,6 +24,7 @@ class Node:
             sd_host: str | None = None,
             sd_port: str | None = None,
             scrape_interval = '1m',
+            scrape_timeout = '20s',
             sd_refresh_interval = '1m',
             replica_count: int = 1,
             metrics_database_url: str | None = None,
@@ -32,6 +39,9 @@ class Node:
         self.targets = dict()
         self.keys_to_delete = list()
         self.scrape_interval = scrape_interval
+        self.scrape_timeout = scrape_timeout
+        if self.scrape_interval < self.scrape_timeout:
+            raise InvalidScrapeConfigError(f'Scrape timeout should be equal or less than scrape interval')
         self.sd_refresh_interval = sd_refresh_interval
         if sd_provider not in self.service_discovery_provider:
             raise ServiceDiscoveryDoesNotExist(f'Service discovery {sd_provider} is ot mapped')
@@ -167,6 +177,7 @@ class Node:
                 prometheus_yml['scrape_configs'].append(
                     {
                         'job_name': 'prometheus_ring_sd',
+                        'scrape_timeout': self.scrape_timeout,
                         'http_sd_configs': [
                             {
                                 'url': f'http://{self.sd_host}:{self.sd_port}/targets',
@@ -186,6 +197,7 @@ class Node:
                 prometheus_yml['scrape_configs'].append(
                     {
                         'job_name': 'prometheus_ring_sd',
+                        'scrape_timeout': self.scrape_timeout,
                         'consul_sd_configs': [
                             {
                                 'server': f'http://{self.sd_host}:{self.sd_port}'
@@ -209,6 +221,7 @@ class Node:
                     }
                 }
             ]
+        logging.debug(f'Generated yaml file: \n{prometheus_yml}')
         return yaml.dump(prometheus_yml, sort_keys=False)
 
     def __repr__(self):

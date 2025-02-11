@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     node_max_load: int = 75
     node_replication_num: int = 1
     node_scrape_interval: str = '1m'
+    node_scrape_timeout: str = '20s'
     sd_refresh_interval: str = '1m'
     sd_provider: str = 'consul'
     sd_port: int = 8500
