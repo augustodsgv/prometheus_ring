@@ -11,6 +11,9 @@ class ServiceDiscoveryDoesNotExist(Exception):
 class InvalidScrapeConfigError(Exception):
     ...
 
+class InvalidTimeLiteralError(Exception):
+    ...
+
 class Node:
     """
     Represents a node in the prometheus ring, i.e. a prometheus instance
@@ -40,8 +43,10 @@ class Node:
         self.keys_to_delete = list()
         self.scrape_interval = scrape_interval
         self.scrape_timeout = scrape_timeout
-        if self.scrape_interval < self.scrape_timeout:
-            raise InvalidScrapeConfigError(f'Scrape timeout should be equal or less than scrape interval')
+        if self._time_literal_to_secs(self.scrape_interval) < self._time_literal_to_secs(self.scrape_timeout):
+            logger.error(f'Invalid scrape interval and timeout values. Interval: {scrape_interval} ({self._time_literal_to_secs(self.scrape_interval)}s), timeout: {scrape_timeout}({self._time_literal_to_secs(self.scrape_timeout)}s)')
+            raise InvalidScrapeConfigError(f'Scrape timeout should be equal or less than scrape interval.')
+        
         self.sd_refresh_interval = sd_refresh_interval
         if sd_provider not in self.service_discovery_provider:
             raise ServiceDiscoveryDoesNotExist(f'Service discovery {sd_provider} is ot mapped')
@@ -134,6 +139,29 @@ class Node:
     #         base_str.append(f'{key}: {target}')
 
     #     return ' '.join(base_str)
+    @classmethod
+    def _time_literal_to_secs(cls, time_literal: str)->int:
+        """
+        Converts prometheus time literal values to seconds
+        """
+        time_units = {
+        'ms': 0.001,
+        's': 1,
+        'm': 60,
+        'h': 3600,
+        'd': 86400,
+        'w': 604800,
+        'y': 31536000
+        }
+        unit = ''
+        for valid_unit in time_units.keys():
+            if time_literal.endswith(valid_unit):
+                unit = valid_unit
+                break
+        if unit == '':
+            raise InvalidTimeLiteralError(f"Invalid time literal {time_literal}")
+        integer_part = int(time_literal.split(unit)[0])
+        return integer_part * time_units[unit]
 
     @property
     def load(self) -> int:
