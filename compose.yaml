@@ -67,7 +67,7 @@ services:
         target: /etc/alertmanager-fallback-config.yaml
     deploy:
       placement:
-        preferences:
+        constraints:
           - "node.labels.mimir-node == 0"
 
   mimir-1:
@@ -82,7 +82,7 @@ services:
         target: /etc/alertmanager-fallback-config.yaml
     deploy:
       placement:
-        preferences:
+        constraints:
           - "node.labels.mimir-node == 1"
 
   mimir-2:
@@ -97,7 +97,7 @@ services:
         target: /etc/alertmanager-fallback-config.yaml
     deploy:
       placement:
-        preferences:
+        constraints:
           - "node.labels.mimir-node == 2"
 
   minio:
