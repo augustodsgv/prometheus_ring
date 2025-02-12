@@ -61,8 +61,8 @@ services:
     volumes:
       - mimir-1-data:/data
     configs:
-      - source: mimir_config
-        target: /etc/mimir.yaml
+      - source: mimir_template_configs
+        target: /etc/mimir-template.yaml
       - source: mimir_alertmanager_fallback_config
         target: /etc/alertmanager-fallback-config.yaml
 
@@ -72,8 +72,8 @@ services:
     volumes:
       - mimir-2-data:/data
     configs:
-      - source: mimir_config
-        target: /etc/mimir.yaml
+      - source: mimir_template_configs
+        target: /etc/mimir-template.yaml
       - source: mimir_alertmanager_fallback_config
         target: /etc/alertmanager-fallback-config.yaml
 
@@ -83,8 +83,8 @@ services:
     volumes:
       - mimir-3-data:/data
     configs:
-      - source: mimir_config
-        target: /etc/mimir.yaml
+      - source: mimir_template_configs
+        target: /etc/mimir-template.yaml
       - source: mimir_alertmanager_fallback_config
         target: /etc/alertmanager-fallback-config.yaml
 
@@ -117,8 +117,8 @@ volumes:
   minio-data:
 
 configs:
-  mimir_config:
-    file: ./mimir/mimir.yaml
+  mimir_template_configs:
+    file: ./mimir/mimir-template.yaml
   mimir_alertmanager_fallback_config:
     file: ./mimir/alertmanager.yaml
   grafana_provisioning_datasources:

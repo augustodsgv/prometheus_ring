@@ -46,6 +46,8 @@ limits:
   accept_ha_samples: true
   max_global_series_per_user: 0
   max_global_series_per_metric: 0
+  max_fetched_chunks_per_query: 0
+  # max_estimated_fetched_chunks_per_query_multiplier: 0      # Multiplier for max_fetched_chunks_per_query. 
 
 distributor:
   ha_tracker:
