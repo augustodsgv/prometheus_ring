@@ -20,7 +20,8 @@ build-mimir:
 	docker push augustodsgv/custom-mimir
 
 deploy:
-	docker stack deploy --compose-file compose.yaml prometheus-ring
+	@export MIMIR_YAML="$(shell cat ./mimir/mimir.yaml)"; \
+	envsubst < compose.yaml | docker stack deploy -c - prometheus-ring
 
 destroy:
 	docker service  ls --format json | jq -r '. | select(.Image == "augustodsgv/prometheus-ring-node") | .ID' | xargs -I {} docker service rm {}

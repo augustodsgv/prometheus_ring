@@ -1,11 +1,28 @@
-FROM alpine:3.12 AS stage
-# Install necessary packages
-RUN apk update && apk add --no-cache net-tools grep coreutils sed curl
+# Building the go project
+FROM golang:1.24-rc-alpine AS builder
 
-WORKDIR /usr/local/bin
-RUN curl -fLo mimir https://github.com/grafana/mimir/releases/latest/download/mimir-linux-amd64 -o mimir
+WORKDIR /app
+
+COPY mimir_utils .
+
+RUN go build -o env_to_yaml
+
+# Running
+FROM alpine:3.12
+
+
+# Copy the go binary - now from the correct path in the builder stage
+COPY --from=builder /app/env_to_yaml /bin/env_to_yaml
+
+WORKDIR /bin
+# # Downloading the mimir binary
+RUN apk update && apk add --no-cache curl 
+RUN curl -fLo mimir https://github.com/grafana/mimir/releases/latest/download/mimir-linux-amd64
 RUN chmod +x mimir
 
-COPY ./entrypoint.sh ./entrypoint.sh
+# # Copy the entry script -  Make sure the 'entry' file is in the same directory as your Dockerfile
+COPY entry /entry
 
-CMD ["./entrypoint.sh"]
+# EXPOSE 8080
+
+ENTRYPOINT ["/entry"]

@@ -1,6 +1,5 @@
 docker run \
-    --name custom-mimir \
+    --name custom \
     -p 8080:8080 \
-    -v ./mimir.yaml:/etc/mimir.yaml \
-    -v ./alertmanager.yaml:/etc/alertmanager-fallback-config.yaml \
-    augustodsgv/custom-mimir
+    -e MIMIR_YAML="$(cat mimir.yaml)" \
+    mimir-teste

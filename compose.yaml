@@ -57,28 +57,26 @@ services:
     image: augustodsgv/custom-mimir
     hostname: mimir-1
     volumes:
-      - ./mimir/mimir-template.yaml:/etc/mimir-template.yaml:ro
-      # - ./mimir/mimir.yaml:/etc/mimir.yaml:ro
-      - ./mimir/alertmanager.yaml:/etc/alertmanager-fallback-config.yaml:ro
       - mimir-1-data:/data
+    environment:
+      - MIMIR_YAML=${MIMIR_YAML}
 
   mimir-2:
     image: augustodsgv/custom-mimir
     hostname: mimir-2
     volumes:
-      - ./mimir/mimir-template.yaml:/etc/mimir-template.yaml:ro
-      # - ./mimir/mimir.yaml:/etc/mimir.yaml:ro
-      - ./mimir/alertmanager.yaml:/etc/alertmanager-fallback-config.yaml:ro
       - mimir-2-data:/data
+    environment:
+      - MIMIR_YAML=${MIMIR_YAML}
+    
 
   mimir-3:
     image: augustodsgv/custom-mimir
     hostname: mimir-3
     volumes:
-      - ./mimir/mimir-template.yaml:/etc/mimir-template.yaml:ro
-      # - ./mimir/mimir.yaml:/etc/mimir.yaml:ro
-      - ./mimir/alertmanager.yaml:/etc/alertmanager-fallback-config.yaml
       - mimir-3-data:/data
+    environment:
+      - MIMIR_YAML=${MIMIR_YAML}
 
   minio:
     image: minio/minio

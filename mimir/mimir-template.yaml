@@ -24,7 +24,7 @@ blocks_storage:
 memberlist:
   join_members: [mimir-1, mimir-2, mimir-3]
   randomize_node_name: false
-  advertise_addr: ADVERTISE_ADDR_REPLACE
+  advertise_addr: {ADVERTISE_ADDR_REPLACE}
 
 ruler:
   rule_path: /data/ruler
@@ -46,6 +46,9 @@ limits:
   accept_ha_samples: true
   max_global_series_per_user: 0
   max_global_series_per_metric: 0
+  # ingestion_burst_size: = 200000    # Defaul value
+
+  ingestion_burst_factor: 1000        # Multiplication factor of the default value, e.i. 200000000
 
 distributor:
   ha_tracker:
