@@ -55,16 +55,35 @@ services:
       - source: nginx
         target: /etc/nginx/nginx.conf
 
+  mimir-0:
+    image: augustodsgv/custom-mimir
+    hostname: mimir-0
+    volumes:
+      - mimir-0-data:/data
+    configs:
+      - source: mimir-template-configs
+        target: /etc/mimir-template.yaml
+      - source: mimir-alertmanager-fallback-config
+        target: /etc/alertmanager-fallback-config.yaml
+    deploy:
+      placement:
+        preferences:
+          - node.labels.mimir-node == 0
+
   mimir-1:
     image: augustodsgv/custom-mimir
     hostname: mimir-1
     volumes:
       - mimir-1-data:/data
     configs:
-      - source: mimir_template_configs
+      - source: mimir-template-configs
         target: /etc/mimir-template.yaml
-      - source: mimir_alertmanager_fallback_config
+      - source: mimir-alertmanager-fallback-config
         target: /etc/alertmanager-fallback-config.yaml
+    deploy:
+      placement:
+        preferences:
+          - node.labels.mimir-node == 1
 
   mimir-2:
     image: augustodsgv/custom-mimir
@@ -72,21 +91,14 @@ services:
     volumes:
       - mimir-2-data:/data
     configs:
-      - source: mimir_template_configs
+      - source: mimir-template-configs
         target: /etc/mimir-template.yaml
-      - source: mimir_alertmanager_fallback_config
+      - source: mimir-alertmanager-fallback-config
         target: /etc/alertmanager-fallback-config.yaml
-
-  mimir-3:
-    image: augustodsgv/custom-mimir
-    hostname: mimir-3
-    volumes:
-      - mimir-3-data:/data
-    configs:
-      - source: mimir_template_configs
-        target: /etc/mimir-template.yaml
-      - source: mimir_alertmanager_fallback_config
-        target: /etc/alertmanager-fallback-config.yaml
+    deploy:
+      placement:
+        preferences:
+          - node.labels.mimir-node == 2
 
   minio:
     image: minio/minio
@@ -111,15 +123,15 @@ services:
         }
 
 volumes:
+  mimir-0-data:
   mimir-1-data:
   mimir-2-data:
-  mimir-3-data:
   minio-data:
 
 configs:
-  mimir_template_configs:
+  mimir-template-configs:
     file: ./mimir/mimir-template.yaml
-  mimir_alertmanager_fallback_config:
+  mimir-alertmanager-fallback-config:
     file: ./mimir/alertmanager.yaml
   grafana_provisioning_datasources:
     file: ./mimir/grafana-provisioning-datasources.yaml
