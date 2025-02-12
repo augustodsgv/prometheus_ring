@@ -7,10 +7,11 @@ services:
       - GF_USERS_DEFAULT_THEME=light
       - GF_LOG_MODE=console
       - GF_LOG_LEVEL=critical
-    volumes:
-      - ./mimir/grafana-provisioning-datasources.yaml:/etc/grafana/provisioning/datasources/provisioning-datasources.yaml:ro
     ports:
       - 3000:3000
+    configs:
+      - source: grafana_provisioning_datasources
+        target: /etc/grafana/provisioning/datasources/datasource.yaml
 
   operator:
     image: augustodsgv/prometheus-ring
@@ -48,37 +49,44 @@ services:
 
   load-balancer:
     image: nginx:latest
-    volumes:
-      - ./mimir/nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
       - "9009:9009"
+    configs:
+      - source: nginx
+        target: /etc/nginx/nginx.conf
 
   mimir-1:
     image: augustodsgv/custom-mimir
     hostname: mimir-1
     volumes:
-      - ./mimir/mimir-template.yaml:/etc/mimir-template.yaml:ro
-      # - ./mimir/mimir.yaml:/etc/mimir.yaml:ro
-      - ./mimir/alertmanager.yaml:/etc/alertmanager-fallback-config.yaml:ro
       - mimir-1-data:/data
+    configs:
+      - source: mimir_config
+        target: /etc/mimir.yaml
+      - source: mimir_alertmanager_fallback_config
+        target: /etc/alertmanager-fallback-config.yaml
 
   mimir-2:
     image: augustodsgv/custom-mimir
     hostname: mimir-2
     volumes:
-      - ./mimir/mimir-template.yaml:/etc/mimir-template.yaml:ro
-      # - ./mimir/mimir.yaml:/etc/mimir.yaml:ro
-      - ./mimir/alertmanager.yaml:/etc/alertmanager-fallback-config.yaml:ro
       - mimir-2-data:/data
+    configs:
+      - source: mimir_config
+        target: /etc/mimir.yaml
+      - source: mimir_alertmanager_fallback_config
+        target: /etc/alertmanager-fallback-config.yaml
 
   mimir-3:
     image: augustodsgv/custom-mimir
     hostname: mimir-3
     volumes:
-      - ./mimir/mimir-template.yaml:/etc/mimir-template.yaml:ro
-      # - ./mimir/mimir.yaml:/etc/mimir.yaml:ro
-      - ./mimir/alertmanager.yaml:/etc/alertmanager-fallback-config.yaml
       - mimir-3-data:/data
+    configs:
+      - source: mimir_config
+        target: /etc/mimir.yaml
+      - source: mimir_alertmanager_fallback_config
+        target: /etc/alertmanager-fallback-config.yaml
 
   minio:
     image: minio/minio
@@ -107,3 +115,13 @@ volumes:
   mimir-2-data:
   mimir-3-data:
   minio-data:
+
+configs:
+  mimir_config:
+    file: ./mimir/mimir.yaml
+  mimir_alertmanager_fallback_config:
+    file: ./mimir/alertmanager.yaml
+  grafana_provisioning_datasources:
+    file: ./mimir/grafana-provisioning-datasources.yaml
+  nginx:
+    file: ./mimir/nginx.conf
