@@ -68,7 +68,7 @@ services:
     deploy:
       placement:
         preferences:
-          - node.labels.mimir-node == 0
+          - "node.labels.mimir-node == 0"
 
   mimir-1:
     image: augustodsgv/custom-mimir
@@ -83,7 +83,7 @@ services:
     deploy:
       placement:
         preferences:
-          - node.labels.mimir-node == 1
+          - "node.labels.mimir-node == 1"
 
   mimir-2:
     image: augustodsgv/custom-mimir
@@ -98,7 +98,7 @@ services:
     deploy:
       placement:
         preferences:
-          - node.labels.mimir-node == 2
+          - "node.labels.mimir-node == 2"
 
   minio:
     image: minio/minio
