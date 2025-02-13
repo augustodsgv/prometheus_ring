@@ -18,6 +18,18 @@ mimir:
     ruler_storage:
       s3:
         bucket_name: mimir-ruler
+    limits:
+      accept_ha_samples: true
+      ha_cluster_label: cluster
+      ha_replica_label: __replica__
+    distributor:
+      ha_tracker:
+        enable_ha_tracker: true
+        kvstore:
+          store: consul
+          consul:
+            host: http://consul-server.consul.svc.cluster.local:8500
+
 
 alertmanager:
   persistentVolume:
