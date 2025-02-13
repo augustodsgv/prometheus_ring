@@ -25,7 +25,7 @@ services:
     - DOCKER_PROMETHEUS_IMAGE=augustodsgv/prometheus-ring-node
     - API_ENDPOINT=operator
     - API_PORT=9988
-    - NODE_CAPACITY=500
+    - NODE_CAPACITY=1000
     - NODE_REPLICATION_NUM=3
     - NODE_MIN_LOAD=25
     - NODE_MAX_LOAD=75
@@ -34,11 +34,11 @@ services:
 
     - SD_PROVIDER=consul
     - SD_PORT=8500
-    - SD_HOST=consul
+    - SD_HOST=201.23.15.213
 
     - LOG_LEVEL=DEBUG
-    - METRICS_DATABASE_URL=load-balancer
-    - METRICS_DATABASE_PORT=9009
+    - METRICS_DATABASE_URL=201.23.15.130
+    - METRICS_DATABASE_PORT=80
     - METRICS_DATABASE_PATH=/api/v1/push
     deploy:
       mode: replicated
@@ -49,4 +49,4 @@ services:
 
 configs:
   grafana_provisioning_datasources:
-    file: ./mimir/grafana-provisioning-datasources.yaml
+    file: ./grafana/grafana-provisioning-datasources.yaml

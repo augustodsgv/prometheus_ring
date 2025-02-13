@@ -1,0 +1,10 @@
+apiVersion: v2
+name: grafana-mimir
+version: 0.1.0
+description: A Helm chart for deploying Grafana with Mimir as the datasource
+type: application
+
+dependencies:
+  - name: grafana
+    version: "~7.0.0"
+    repository: "https://grafana.github.io/helm-charts"

@@ -1,0 +1,26 @@
+namespace: grafana
+grafana:
+  enabled: true
+
+  adminUser: admin
+  adminPassword: admin
+
+  service:
+    enabled: true
+    type: LoadBalancer
+
+  persistence:
+    enabled: true
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Mimir
+          type: prometheus
+          url: http://mimir-nginx.mimir.svc:80/prometheus
+          access: proxy
+          isDefault: true
