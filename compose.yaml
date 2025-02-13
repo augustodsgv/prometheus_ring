@@ -1,18 +1,4 @@
 services:
-  grafana:
-    image: grafana/grafana:latest
-    environment:
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
-      - GF_USERS_DEFAULT_THEME=light
-      - GF_LOG_MODE=console
-      - GF_LOG_LEVEL=critical
-    ports:
-      - 3000:3000
-    configs:
-      - source: grafana_provisioning_datasources
-        target: /etc/grafana/provisioning/datasources/datasource.yaml
-
   operator:
     image: augustodsgv/prometheus-ring
     volumes:
@@ -46,7 +32,3 @@ services:
       placement:
         constraints:
           - node.role == manager
-
-configs:
-  grafana_provisioning_datasources:
-    file: ./grafana/grafana-provisioning-datasources.yaml
