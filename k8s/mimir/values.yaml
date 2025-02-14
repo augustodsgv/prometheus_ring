@@ -7,8 +7,8 @@ mimir:
         s3:
           endpoint: br-ne1.magaluobjects.com
           region: br-ne1
-          access_key_id: ""
-          secret_access_key: ""
+          access_key_id: "f074ac4a-a5de-4fde-a0a6-2651842b0d9c"
+          secret_access_key: "0f9bc9a3-2871-4bba-8fee-a8aad82fa94d"
     blocks_storage:
       s3:
         bucket_name: mimir-blocks
@@ -20,8 +20,18 @@ mimir:
         bucket_name: mimir-ruler
     limits:
       accept_ha_samples: true
+      max_global_series_per_user: 0
+      max_global_series_per_metric: 0
+      max_fetched_chunks_per_query: 0
+      accept_ha_samples: true
+      ingestion_rate: 100000000
+      ingestion_burst_size: 2000000  # default value
+      ingestion_burst_factor: 1000    # multiplier of the default ingestion_burst_size, i.e. 1000 * 200000 = 200000000
+      max_exemplars_per_series_per_request: 0     # Remove limits of queries
+
       ha_cluster_label: cluster
       ha_replica_label: __replica__
+
     distributor:
       ha_tracker:
         enable_ha_tracker: true
@@ -66,12 +76,12 @@ distributor:
 ingester:
   persistentVolume:
     size: 50Gi
-  replicas: 3
+  replicas: 4
   resources:
     limits:
-      memory: 12Gi
+      memory: 16Gi
     requests:
-      cpu: 3.5
+      cpu: 3.0
       memory: 8Gi
   topologySpreadConstraints: {}
   affinity:
@@ -204,10 +214,3 @@ nginx:
     requests:
       cpu: 1
       memory: 512Mi
-
-# Disabling mimir limits for stress test
-limits:
-  accept_ha_samples: true
-  max_global_series_per_user: 0
-  max_global_series_per_metric: 0
-  max_fetched_chunks_per_query: 0
