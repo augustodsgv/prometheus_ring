@@ -47,7 +47,7 @@ class Node:
             logger.error(f'Invalid scrape interval and timeout values. Interval: {scrape_interval} ({self._time_literal_to_secs(self.scrape_interval)}s), timeout: {scrape_timeout}({self._time_literal_to_secs(self.scrape_timeout)}s)')
             raise InvalidScrapeConfigError(f'Scrape timeout should be equal or less than scrape interval.')
         
-        self.sd_refresh_interval = sd_refresh_interval
+        self.sd_refresh_interval = sd_refresh_interval      # TODO: add validation
         if sd_provider not in self.service_discovery_provider:
             raise ServiceDiscoveryDoesNotExist(f'Service discovery {sd_provider} is ot mapped')
         self.sd_provider = sd_provider
@@ -209,7 +209,8 @@ class Node:
                         'http_sd_configs': [
                             {
                                 'url': f'http://{self.sd_host}:{self.sd_port}/targets',
-                                'sd_refresh_interval': self.sd_refresh_interval
+                                # 'sd_refresh_interval': self.sd_refresh_interval
+                                'refresh_interval': self.sd_refresh_interval
                             }
                         ],
                         'relabel_configs': [
@@ -228,7 +229,8 @@ class Node:
                         'scrape_timeout': self.scrape_timeout,
                         'consul_sd_configs': [
                             {
-                                'server': f'http://{self.sd_host}:{self.sd_port}'
+                                'server': f'http://{self.sd_host}:{self.sd_port}',
+                                'refresh_interval': self.sd_refresh_interval
                             }
                         ],
                         'relabel_configs': [
