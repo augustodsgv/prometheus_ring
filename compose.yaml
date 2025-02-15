@@ -12,7 +12,7 @@ services:
     - API_ENDPOINT=operator
     - API_PORT=9988
     - NODE_CAPACITY=1000
-    - NODE_REPLICATION_NUM=3
+    - NODE_REPLICATION_NUM=1
     - NODE_MIN_LOAD=25
     - NODE_MAX_LOAD=75
     - NODE_SCRAPE_INTERVAL=1m
@@ -21,7 +21,6 @@ services:
     - SD_PROVIDER=consul
     - SD_PORT=8500
     - SD_HOST=201.23.15.213
-    - SD_REFRESH_INTERVAL=5m
 
     - LOG_LEVEL=DEBUG
     - METRICS_DATABASE_URL=201.23.15.130
@@ -35,5 +34,5 @@ services:
            - node.role == manager
       resources:
         reservations:
-          memory: 2GB
-          cpus: 2
+          memory: "2GB"
+          cpus: "2"
