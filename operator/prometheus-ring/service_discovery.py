@@ -2,6 +2,7 @@ from .target import Target
 from .node import Node
 import requests
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 MAX_RETRIES = 5
@@ -34,11 +35,12 @@ class ServiceDiscovery:
             logger.error(f'Error deregistering target {target.id} in consul: {response.content}')
             if 'Unknown service ID' in response.text:               # There is a bug where sometimes the service is not found. Retrying to deregister
                 for i in range(MAX_RETRIES):
-                    logger.error(f'Retyring degister {target.id}. Atempo {i}')
+                    logger.info(f'Retyring degister {target.id}. Atempo {i}')
                     response = requests.put(f'http://{self.consul_url}:{self.consul_port}/v1/agent/service/deregister/{target.id}')
                     if response.status_code == 200:
                         logger.info(f'Target {target.id} deregistered from consul')
                         break
+                    time.sleep(0.5)
                 logger.error(f'Error deregistering target {target.id} in consul: {response.content} after {MAX_RETRIES} retries')
         else:
             logger.info(f'Target {target.id} deregistered from consul')

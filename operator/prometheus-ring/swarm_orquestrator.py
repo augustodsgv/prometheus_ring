@@ -88,11 +88,10 @@ class SwarmOrquestrator:
         """
         Deletes a prometheus docker container
         """
-        print(f'Deleting node {node} from swarm')
+        logger.debug(f'Deleting node {node} from swarm')
         logger.debug(f'Deleting node {node} from swarm')
         node_service = self.services.get(node.index)
         result = node_service.remove()
-        print(f'Result: {result}')
         logger.debug(f'Result: {result}')
 
 

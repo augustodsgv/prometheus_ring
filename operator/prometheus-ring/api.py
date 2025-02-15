@@ -25,7 +25,7 @@ class API:
         Scales up the ring if the prometheus nodes are full.
         """
         new_node = self.ring.insert(target, target.id)         # Using the id as a hash, for now
-        logger.debug(f'iserting target {target}')
+        logger.debug(f'inserting target {target}')
         if new_node is not None:
             self.orquestrator.create_node(new_node)
             # TODO: Implement some async call here
@@ -62,7 +62,6 @@ class API:
                 if self.service_discovery is not None:
                     targets_to_relocate = node_to_delete.list_items()
                     logger.debug(f'targets to relocate: {targets_to_relocate}')
-                    print(f'targets to relocate: {targets_to_relocate}')
                     if len(targets_to_relocate) > 0:        # Checking if there are targets to relocate
                         previous_node = self.ring.get_target_node(targets_to_relocate[0].id)     # All targets from the same node
                         for target in targets_to_relocate:
@@ -79,7 +78,6 @@ class API:
         nodes = self.ring.get_nodes()
         logger.debug(f'Nodes: {nodes}')
         for node in nodes:
-            print(node)
             logger.debug(f'node: {node}')
             targets = node.list_items()
             targets_json.append(
