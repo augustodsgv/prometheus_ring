@@ -1,5 +1,9 @@
 
 mimir:
+  # This is the mimir.yaml, that configures the Mimir components
+  # Note that this is the components configurations, not their 
+  # Configuration on k8s
+
   structuredConfig:
     common:
       storage:
@@ -30,8 +34,8 @@ mimir:
       max_fetched_chunks_per_query: 0
       accept_ha_samples: true
       ingestion_rate: 100000000
-      ingestion_burst_size: 2000000  # default value
-      ingestion_burst_factor: 1000    # multiplier of the default ingestion_burst_size, i.e. 1000 * 200000 = 200000000
+      ingestion_burst_size: 2000000               # Default value
+      ingestion_burst_factor: 1000                # Multiplier of the default ingestion_burst_size, i.e. 1000 * 200000 = 200000000
       max_exemplars_per_series_per_request: 0     # Remove limits of queries
       ha_cluster_label: cluster
       ha_replica_label: __replica__
@@ -44,6 +48,7 @@ mimir:
           consul:
             host: http://consul-server.consul.svc.cluster.local:8500
 
+# These are the mimir components configurations to k8s
 alertmanager:
   persistentVolume:
     enabled: true
@@ -128,7 +133,7 @@ results-cache:
   enabled: true
   replicas: 2
 
-# Disable minio (kill this guy)
+# Disable minio (kill this guy please)
 minio:
   enabled: false
 
