@@ -9,15 +9,20 @@ mimir:
           region: br-ne1
           access_key_id: ""
           secret_access_key: ""
+
     blocks_storage:
       s3:
         bucket_name: mimir-blocks
+      tsdb:
+        retention_period: 2h
+
     alertmanager_storage:
       s3:
         bucket_name: mimir-alertmanager
     ruler_storage:
       s3:
         bucket_name: mimir-ruler
+
     limits:
       accept_ha_samples: true
       max_global_series_per_user: 0
@@ -28,7 +33,6 @@ mimir:
       ingestion_burst_size: 2000000  # default value
       ingestion_burst_factor: 1000    # multiplier of the default ingestion_burst_size, i.e. 1000 * 200000 = 200000000
       max_exemplars_per_series_per_request: 0     # Remove limits of queries
-
       ha_cluster_label: cluster
       ha_replica_label: __replica__
 
