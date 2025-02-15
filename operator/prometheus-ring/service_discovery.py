@@ -4,7 +4,7 @@ import requests
 import logging
 
 logger = logging.getLogger(__name__)
-
+MAX_RETRIES = 5
 class ServiceDiscovery:
     """
     For now, this implement only consul SD
@@ -32,5 +32,13 @@ class ServiceDiscovery:
         response = requests.put(f'http://{self.consul_url}:{self.consul_port}/v1/agent/service/deregister/{target.id}')
         if response.status_code != 200:
             logger.error(f'Error deregistering target {target.id} in consul: {response.content}')
+            if 'Unknown service ID' in response.text:               # There is a bug where sometimes the service is not found. Retrying to deregister
+                for i in range(MAX_RETRIES):
+                    logger.error(f'Retyring degister {target.id}. Atempo {i}')
+                    response = requests.put(f'http://{self.consul_url}:{self.consul_port}/v1/agent/service/deregister/{target.id}')
+                    if response.status_code == 200:
+                        logger.info(f'Target {target.id} deregistered from consul')
+                        break
+                logger.error(f'Error deregistering target {target.id} in consul: {response.content} after {MAX_RETRIES} retries')
         else:
             logger.info(f'Target {target.id} deregistered from consul')
