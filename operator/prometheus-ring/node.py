@@ -209,7 +209,6 @@ class Node:
                         'http_sd_configs': [
                             {
                                 'url': f'http://{self.sd_host}:{self.sd_port}/targets',
-                                # 'sd_refresh_interval': self.sd_refresh_interval
                                 'refresh_interval': self.sd_refresh_interval
                             }
                         ],
@@ -247,7 +246,7 @@ class Node:
                 {
                     'url': f'http://{self.metrics_database_url}:{self.metrics_database_port}{self.metrics_database_path}',
                     'headers': {
-                        'X-Scope-OrgID': 'prometheus-ring'
+                        'X-ScopeOrgID': 'prometheus-ring'
                     }
                 }
             ]

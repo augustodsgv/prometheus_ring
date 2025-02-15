@@ -1,0 +1,216 @@
+
+mimir:
+  structuredConfig:
+    common:
+      storage:
+        backend: s3
+        s3:
+          endpoint: br-ne1.magaluobjects.com
+          region: br-ne1
+          access_key_id: ""
+          secret_access_key: ""
+    blocks_storage:
+      s3:
+        bucket_name: mimir-blocks
+    alertmanager_storage:
+      s3:
+        bucket_name: mimir-alertmanager
+    ruler_storage:
+      s3:
+        bucket_name: mimir-ruler
+    limits:
+      accept_ha_samples: true
+      max_global_series_per_user: 0
+      max_global_series_per_metric: 0
+      max_fetched_chunks_per_query: 0
+      accept_ha_samples: true
+      ingestion_rate: 100000000
+      ingestion_burst_size: 2000000  # default value
+      ingestion_burst_factor: 1000    # multiplier of the default ingestion_burst_size, i.e. 1000 * 200000 = 200000000
+      max_exemplars_per_series_per_request: 0     # Remove limits of queries
+
+      ha_cluster_label: cluster
+      ha_replica_label: __replica__
+
+    distributor:
+      ha_tracker:
+        enable_ha_tracker: true
+        kvstore:
+          store: consul
+          consul:
+            host: http://consul-server.consul.svc.cluster.local:8500
+
+
+alertmanager:
+  persistentVolume:
+    enabled: true
+  replicas: 2
+  resources:
+    limits:
+      memory: 1.4Gi
+    requests:
+      cpu: 1
+      memory: 1Gi
+  statefulSet:
+    enabled: true
+
+compactor:
+  persistentVolume:
+    size: 20Gi
+  resources:
+    limits:
+      memory: 2.1Gi
+    requests:
+      cpu: 1
+      memory: 1.5Gi
+
+distributor:
+  replicas: 2
+  resources:
+    limits:
+      memory: 5.7Gi
+    requests:
+      cpu: 2
+      memory: 4Gi
+
+ingester:
+  persistentVolume:
+    size: 50Gi
+  replicas: 4
+  resources:
+    limits:
+      memory: 16Gi
+    requests:
+      cpu: 3.0
+      memory: 8Gi
+  topologySpreadConstraints: {}
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: target # support for enterprise.legacyLabels
+                operator: In
+                values:
+                  - ingester
+          topologyKey: 'kubernetes.io/hostname'
+
+        - labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                  - ingester
+          topologyKey: 'kubernetes.io/hostname'
+
+  zoneAwareReplication:
+    topologyKey: 'kubernetes.io/hostname'
+
+admin-cache:
+  enabled: true
+  replicas: 2
+
+chunks-cache:
+  enabled: true
+  replicas: 2
+
+index-cache:
+  enabled: true
+  replicas: 3
+
+metadata-cache:
+  enabled: true
+
+results-cache:
+  enabled: true
+  replicas: 2
+
+# Disable minio (kill this guy)
+minio:
+  enabled: false
+
+overrides_exporter:
+  replicas: 1
+  resources:
+    limits:
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+querier:
+  replicas: 1
+  resources:
+    limits:
+      memory: 5.6Gi
+    requests:
+      cpu: 2
+      memory: 4Gi
+
+query_frontend:
+  replicas: 1
+  resources:
+    limits:
+      memory: 2.8Gi
+    requests:
+      cpu: 2
+      memory: 2Gi
+
+ruler:
+  replicas: 1
+  resources:
+    limits:
+      memory: 2.8Gi
+    requests:
+      cpu: 1
+      memory: 2Gi
+
+store_gateway:
+  persistentVolume:
+    size: 10Gi
+  replicas: 3
+  resources:
+    limits:
+      memory: 2.1Gi
+    requests:
+      cpu: 1
+      memory: 1.5Gi
+  topologySpreadConstraints: {}
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: target # support for enterprise.legacyLabels
+                operator: In
+                values:
+                  - store-gateway
+          topologyKey: 'kubernetes.io/hostname'
+
+        - labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                  - store-gateway
+          topologyKey: 'kubernetes.io/hostname'
+  zoneAwareReplication:
+    topologyKey: 'kubernetes.io/hostname'
+
+# Configuring nginx for external access
+nginx:
+  ingress:
+    tls:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+      - paths:
+          - path: /
+            pathType: Prefix
+  replicas: 1
+  resources:
+    limits:
+      memory: 731Mi
+    requests:
+      cpu: 1
+      memory: 512Mi

@@ -27,7 +27,6 @@
       set_fact:
         manager_join_command: '{{ manager_join_command_raw.stdout_lines[0] }}'
 
-
 - hosts: managers[1:]
   roles:
     - swarm_join_manager
