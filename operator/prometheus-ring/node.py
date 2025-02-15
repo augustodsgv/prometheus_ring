@@ -209,7 +209,7 @@ class Node:
                         'http_sd_configs': [
                             {
                                 'url': f'http://{self.sd_host}:{self.sd_port}/targets',
-                                'sd_refresh_interval': self.sd_refresh_interval
+                                'refresh_interval': self.sd_refresh_interval
                             }
                         ],
                         'relabel_configs': [
@@ -228,7 +228,8 @@ class Node:
                         'scrape_timeout': self.scrape_timeout,
                         'consul_sd_configs': [
                             {
-                                'server': f'http://{self.sd_host}:{self.sd_port}'
+                                'server': f'http://{self.sd_host}:{self.sd_port}',
+                                'refresh_interval': self.sd_refresh_interval
                             }
                         ],
                         'relabel_configs': [
@@ -245,7 +246,7 @@ class Node:
                 {
                     'url': f'http://{self.metrics_database_url}:{self.metrics_database_port}{self.metrics_database_path}',
                     'headers': {
-                        'X-Scope-OrgID': 'prometheus-ring'
+                        'X-ScopeOrgID': 'prometheus-ring'
                     }
                 }
             ]

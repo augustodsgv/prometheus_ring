@@ -7,8 +7,8 @@ mimir:
         s3:
           endpoint: br-ne1.magaluobjects.com
           region: br-ne1
-          access_key_id: "f074ac4a-a5de-4fde-a0a6-2651842b0d9c"
-          secret_access_key: "0f9bc9a3-2871-4bba-8fee-a8aad82fa94d"
+          access_key_id: ""
+          secret_access_key: ""
     blocks_storage:
       s3:
         bucket_name: mimir-blocks

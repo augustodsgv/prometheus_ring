@@ -9,7 +9,7 @@ COPY prometheus_utils .
 RUN go build -o env_to_yml
 
 # Stage 2: Create the final image
-FROM prom/prometheus
+FROM prom/prometheus:main
 
 EXPOSE 9090
 

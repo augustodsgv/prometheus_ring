@@ -27,18 +27,20 @@ ring = Ring(
     sd_provider=settings.sd_provider,
     sd_host=settings.sd_host,
     sd_port=settings.sd_port,
+    sd_refresh_interval=settings.sd_refresh_interval,
     node_scrape_interval=settings.node_scrape_interval,
     node_scrape_timeout=settings.node_scrape_timeout,
-    sd_refresh_interval=settings.sd_refresh_interval,
     adt=bst,
     metrics_database_url=settings.metrics_database_url,
     metrics_database_port=settings.metrics_database_port,
     metrics_database_path=settings.metrics_database_path
 )
 
-
 orquestrator = SwarmOrquestrator(settings.docker_prometheus_image, settings.docker_network)
-service_discovery = ServiceDiscovery(settings.sd_host, settings.sd_port)
+if settings.sd_provider == 'consul':
+    service_discovery = ServiceDiscovery(settings.sd_host, settings.sd_port)
+else:
+    service_discovery = None
 api = API(ring, orquestrator, service_discovery)
 
 first_node = ring.node_zero             # The first node has to be created manually
