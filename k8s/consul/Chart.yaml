@@ -1,0 +1,10 @@
+apiVersion: v2
+name: consul
+version: 0.1.0
+description: A Helm chart for deploying Consul
+type: application
+
+dependencies:
+  - name: hashicorp/consul
+    version: 1.6.2
+    repository: https://helm.releases.hashicorp.com
