@@ -40,17 +40,16 @@ mimir:
           consul:
             host: http://consul-server.consul.svc.cluster.local:8500
 
-
 alertmanager:
   persistentVolume:
     enabled: true
-  replicas: 2
+  replicas: 1
   resources:
     limits:
       memory: 1.4Gi
     requests:
       cpu: 1
-      memory: 1Gi
+      memory: 100Mi
   statefulSet:
     enabled: true
 
@@ -62,7 +61,7 @@ compactor:
       memory: 2.1Gi
     requests:
       cpu: 1
-      memory: 1.5Gi
+      memory: 1.0Gi
 
 distributor:
   replicas: 2
@@ -76,12 +75,12 @@ distributor:
 ingester:
   persistentVolume:
     size: 50Gi
-  replicas: 4
+  replicas: 8
   resources:
     limits:
-      memory: 16Gi
+      memory: 20Gi
     requests:
-      cpu: 3.0
+      cpu: 2.5
       memory: 8Gi
   topologySpreadConstraints: {}
   affinity:
@@ -145,7 +144,7 @@ querier:
       memory: 5.6Gi
     requests:
       cpu: 2
-      memory: 4Gi
+      memory: 1Gi
 
 query_frontend:
   replicas: 1
@@ -153,7 +152,7 @@ query_frontend:
     limits:
       memory: 2.8Gi
     requests:
-      cpu: 2
+      cpu: 1
       memory: 2Gi
 
 ruler:
@@ -163,7 +162,7 @@ ruler:
       memory: 2.8Gi
     requests:
       cpu: 1
-      memory: 2Gi
+      memory: 1Gi
 
 store_gateway:
   persistentVolume:
@@ -197,16 +196,9 @@ store_gateway:
   zoneAwareReplication:
     topologyKey: 'kubernetes.io/hostname'
 
-# Configuring nginx for external access
-nginx:
-  ingress:
-    tls:
-    enabled: true
-    ingressClassName: nginx
-    hosts:
-      - paths:
-          - path: /
-            pathType: Prefix
+gateway:
+  enabledNonEnterprise: true
+  enabled: true
   replicas: 1
   resources:
     limits:
@@ -214,3 +206,13 @@ nginx:
     requests:
       cpu: 1
       memory: 512Mi
+  service:
+    type: LoadBalancer
+    port: 80
+
+  # autoscaling:
+  #   enabled: true
+  #   minReplicas: 1
+  #   maxReplicas: 3
+  #   targetCPUUtilizationPercentage: 70
+  #   targetMemoryUtilizationPercentage: 70
