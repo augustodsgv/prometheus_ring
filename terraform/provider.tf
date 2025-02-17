@@ -1,11 +1,10 @@
 provider "mgc" {
-  alias   = "sudeste"
-  region  = "br-se1"
-  api_key = var.api_key
-}
-
-provider "mgc" {
-  alias   = "nordeste"
-  region  = "br-ne1"
-  api_key = var.api_key
+  region = var.mgc_region
+  api_key = var.mgc_api_key
+  object_storage = {
+    key_pair = {
+      key_id = var.mgc_obj_key_id
+      key_secret = var.mgc_obj_key_secret
+    }
+  }
 }
