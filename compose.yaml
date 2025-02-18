@@ -18,12 +18,12 @@ services:
     - NODE_SCRAPE_INTERVAL=1m
     - NODE_SCRAPE_TIMEOUT=20s
     - SD_REFRESH_INTERVAL=1m
-    - SD_PROVIDER=consul
-    - SD_PORT=8500
-    - SD_HOST=201.23.15.213
+    - SD_PROVIDER=prometheus_ring_sd
+    - SD_PORT=9988
+    - SD_HOST=operator
 
     - LOG_LEVEL=INFO
-    - METRICS_DATABASE_URL=201.23.2.44
+    - METRICS_DATABASE_URL=201.23.1.162
     - METRICS_DATABASE_PORT=80
     - METRICS_DATABASE_PATH=/api/v1/push
     deploy:
