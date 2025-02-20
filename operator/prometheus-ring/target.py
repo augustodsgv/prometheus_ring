@@ -6,6 +6,7 @@ class Target(BaseModel, frozen=True):
     address: str
     metrics_port: int = Field(default=8000)
     metrics_path: str = Field(default='/metrics')
+    labels: dict = Field(default={})
 
     @property
     def endpoint(self)->str:
