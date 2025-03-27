@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+import sys
+import json
+import yaml
+
+SSH_KEY_PATH = '/home/augusto/.ssh/ed25519'
+
+def read_tf_json(json_file: str)->dict:
+    """
+    Reads a json file
+    """
+    with open(json_file) as f:
+        json_content = json.load(f)
+    return json_content
+
+def write_inventory_yaml(inventory_dict: dict, inventory_path: str)->None:
+    """
+    Dumps yaml and writes it to the file
+    """
+    with open(inventory_path, 'w') as f:
+        inventory_yaml = yaml.dump(inventory_dict, sort_keys=False)
+        f.write(inventory_yaml)
+
+def json_to_inventory(tf_json: dict)->dict:
+    """
+    Reads the manager and worker nodes from the json and creates a yaml inventory
+    """
+    base_inventory = {
+        'all': {
+            'vars':{
+                'ansible_user': 'ubuntu',
+                'ansible_ssh_private_key_file': SSH_KEY_PATH,
+                'ansible_ssh_common_args': '-o StrictHostKeyChecking=no'
+            },
+            'children': {
+                'managers': {
+                    'hosts': {}
+                },
+                'workers': {
+                    'hosts': {}
+                },
+            }
+        }
+    }
+
+    # Getting manager nodes from
+    for name, info in tf_json['prom_ring_managers_ips']['value'].items():
+        base_inventory['all']['children']['managers']['hosts'][name] = {
+            'ansible_host': info['public_ip'],
+            'private_ip': info['private_ip']
+        }
+
+    # Getting worker nodes from
+    for name, info in tf_json['prom_ring_workers_ips']['value'].items():
+        base_inventory['all']['children']['workers']['hosts'][name] = {
+            'ansible_host': info['public_ip'],
+            'private_ip': info['private_ip']
+        }
+
+    return base_inventory
+
+def main():
+    if len(sys.argv) < 2:
+        print('Usage: build-inventory [path/to/tf.json] <path/to/inventory.yaml>')
+        exit(1)
+
+    if len(sys.argv) == 2:          # Accepts using stdin input
+        tf_json = json.loads(sys.stdin.read())
+    else:
+        tf_json = read_tf_json(sys.argv[1])
+    
+    inventory_dict = json_to_inventory(tf_json)
+    
+    # if json argument was provided, them inventory.yaml is the third argument
+    if len(sys.argv) == 2:
+        inventory_path = sys.argv[1]
+    else:
+        inventory_path = sys.argv[2]
+
+    write_inventory_yaml(inventory_dict, inventory_path)
+
+if __name__ == '__main__':
+    main()

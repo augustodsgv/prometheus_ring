@@ -1,0 +1,27 @@
+
+# Stage 1: Build the Go project
+FROM golang:1.23.2 AS builder
+
+WORKDIR /app
+
+COPY prometheus_utils .
+
+RUN go build -o env_to_yml
+
+# Stage 2: Create the final image
+FROM prom/prometheus:main
+
+EXPOSE 9090
+
+# Copy the built Go binary from the builder stage
+COPY --from=builder /app/env_to_yml /usr/bin/env_to_yml
+
+# Copy the entry script
+ADD entry /
+
+ENTRYPOINT ["/entry"]
+CMD ["--config.file=/etc/prometheus/prometheus.yml", \
+    "--storage.agent.path=/prometheus/agent", \
+    "--agent"]
+    # "--web.console.libraries=/usr/share/prometheus/console_libraries",
+    # "--web.console.templates=/usr/share/prometheus/consoles",

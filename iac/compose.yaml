@@ -1,0 +1,38 @@
+services:
+  operator:
+    image: augustodsgv/prometheus-ring
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "9988:9988"
+    environment:
+    - DOCKER_NETWORK=prometheus-ring_default
+    
+    - DOCKER_PROMETHEUS_IMAGE=augustodsgv/prometheus-ring-node
+    - API_ENDPOINT=operator
+    - API_PORT=9988
+    - NODE_CAPACITY=1000
+    - NODE_REPLICATION_NUM=3
+    - NODE_MIN_LOAD=0
+    - NODE_MAX_LOAD=100
+    - NODE_SCRAPE_INTERVAL=1m
+    - NODE_SCRAPE_TIMEOUT=20s
+    - SD_REFRESH_INTERVAL=1m
+    - SD_PROVIDER=prometheus_ring_sd
+    - SD_PORT=9988
+    - SD_HOST=operator
+
+    - LOG_LEVEL=INFO
+    - METRICS_DATABASE_URL=201.23.12.56
+    - METRICS_DATABASE_PORT=80
+    - METRICS_DATABASE_PATH=/api/v1/push
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+           - node.role == manager
+      resources:
+        reservations:
+          memory: "2GB"
+          cpus: "2"

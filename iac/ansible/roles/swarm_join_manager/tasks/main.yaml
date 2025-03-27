@@ -1,0 +1,2 @@
+- name: join cluster as manager
+  shell: "{{ hostvars[groups['managers'][0]].manager_join_command | replace('{{ .AdvertiseAddr }}', hostvars[inventory_hostname].private_ip) }}"

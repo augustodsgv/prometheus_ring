@@ -1,0 +1,4 @@
+- name: Initialize the cluster using docker swarm
+  docker_swarm:
+    state: present
+    advertise_addr: "{{ hostvars[inventory_hostname].private_ip }}"

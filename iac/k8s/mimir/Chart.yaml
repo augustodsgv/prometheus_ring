@@ -1,0 +1,18 @@
+apiVersion: v2
+version: 5.7.0-weekly.329
+appVersion: r329
+description: "Grafana Mimir"
+home: https://grafana.com/docs/helm-charts/mimir-distributed/latest/
+kubeVersion: ^1.20.0-0
+name: mimir-distributed
+dependencies:
+  - name: grafana-agent-operator
+    alias: grafana-agent-operator
+    version: 0.5.1
+    repository: https://grafana.github.io/helm-charts
+    condition: metaMonitoring.grafanaAgent.installOperator
+  - name: rollout-operator
+    alias: rollout_operator
+    repository: https://grafana.github.io/helm-charts
+    version: 0.23.0
+    condition: rollout_operator.enabled
