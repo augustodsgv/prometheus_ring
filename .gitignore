@@ -3,6 +3,7 @@ venv
 .vscode
 .pytest_cache
 .terraform
+.terraform.lock.hcl
 terraform.tfstate
 terraform.tfstate.backup
 terraform.tfplan
@@ -10,3 +11,4 @@ variables.tf
 Chart.lock
 charts
 kubeconfig.yaml
+auth.sh
