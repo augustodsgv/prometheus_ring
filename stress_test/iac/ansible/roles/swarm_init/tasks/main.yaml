@@ -1,0 +1,16 @@
+- name: Initialize the cluster using docker swarm
+  docker_swarm:
+    state: present
+    advertise_addr: "{{ hostvars[inventory_hostname].private_ip }}"
+
+- name: Remove the ingress network limited by 128 IPs
+  ansible.builtin.shell: echo "y" | docker network rm ingress
+  ignore_errors: yes
+
+- name: Create the new ingress network
+  ansible.builtin.shell: >
+    docker network create
+    --driver overlay
+    --ingress
+    --subnet=10.10.0.0/16
+    ingress

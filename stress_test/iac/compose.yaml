@@ -1,0 +1,16 @@
+services:
+  synthetic-exporter:
+    image: ghcr.io/augustodsgv/synthetic-exporter
+    environment:
+      PORT: 8000
+      METRICS_BASE_NAME: synthetic_metric
+      METRIC_COUNT: 1000
+      LABEL_COUNT: 2
+      LABEL_VALUES_COUNT: 2
+      REFRESH_INTERVAL: 60
+    ports:
+      - "8000:8000"
+    deploy:
+      replicas: 3
+
+

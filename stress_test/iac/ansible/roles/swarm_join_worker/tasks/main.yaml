@@ -1,0 +1,5 @@
+- name: join cluster as worker
+  shell: "{{ hostvars[groups['managers'][0]].worker_join_command }}"
+  args:
+    chdir: $HOME
+    creates: node_joined.txt
