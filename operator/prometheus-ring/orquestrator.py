@@ -22,7 +22,6 @@ class Orquestrator:
         self.prometheus_docker_image = prometheus_docker_image
         self.docker_url = docker_url
         self.containers: dict[list[str]]= dict()        # Keeps track of each instance and it's replicas
-        self.curr_port = 39090
 
     def create_instance(
             self,
@@ -39,14 +38,12 @@ class Orquestrator:
 
         environment['PROMETHEUS_YML'] = node.yaml
         for i in range(node.replica_count):
-            self.curr_port += 1         # Gambiarra só pra criar portas não alocadas para container
             container = self.client.containers.run(
                 name=f'prometheus-{node.index}-{i}',
                 image=self.prometheus_docker_image,
                 network=self.api_network,
                 environment=environment,
                 detach=True,
-                ports={node.port: self.curr_port} if node.port is not None else None
             )
         
             self.containers[node.index].append(container)
